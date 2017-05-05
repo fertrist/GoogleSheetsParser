@@ -153,34 +153,40 @@ public class Quickstart {
         // Build a new authorized API client service.
         Sheets service = getSheetsService();
 
-        // Prints the names and majors of students in a sample spreadsheet:
-        // https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
         String spreadsheetId = "1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg";
-        String range = "B4:B12";
-        String params = "&includeGridData=true";
+        String range = "B2:B12";
 
-        //Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId).execute();
         Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(Collections.singletonList(range)).setIncludeGridData(true).execute();
-        List<NamedRange> namedRanges = spreadsheet.getNamedRanges();
         List<Sheet> sheets = spreadsheet.getSheets();
-
-        Sheet sheet = spreadsheet.getSheets().get(0);
+        Sheet sheet = sheets.get(0);
         List<GridData> gridDatas = sheet.getData();
         GridData gridData = gridDatas.get(0);
         List<RowData> rowDatas = gridData.getRowData();
         RowData rowData = rowDatas.get(0);
+        System.out.println("Rows : " + rowDatas.size());
         List<CellData> cellDatas = rowData.getValues();
         CellData cellData = cellDatas.get(0);
         CellFormat effectiveFormat = cellData.getEffectiveFormat();
         ExtendedValue effectiveValue = cellData.getEffectiveValue();
 
-        ValueRange response = service.spreadsheets().values()
-                .get(spreadsheetId, range)
-                .execute();
+        //TODO algorythm:
+        /*
+        * 1. load first row and define columns for group meetings
+        * 2. define white list rows
+        * 3. define other lists rows
+        * 4. load rows and collect data using indexes which were retrieved
+        * on previous iteration
+        * define guest policy
+        *
+        *
+        * */
 
         //Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId).setIncludeGridData(true).execute();
 
-
+        range = "B4:B12";
+        ValueRange response = service.spreadsheets().values()
+                .get(spreadsheetId, range)
+                .execute();
         List<List<Object>> values = response.getValues();
         if (values == null || values.size() == 0) {
             System.out.println("No data found.");
