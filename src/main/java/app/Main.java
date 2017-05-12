@@ -13,6 +13,7 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
+import javafx.util.Pair;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,7 +21,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
     /** Application name. */
@@ -179,16 +182,24 @@ public class Main {
         }
 
         List<GridRange> merges = sheet.getMerges();
-        List<Integer> monthsIndecies = new ArrayList<>();
-        for (GridRange merge : merges) {
-            monthsIndecies.add(merge.getStartColumnIndex());
-        }
-        System.out.println(monthsIndecies);
 
-        for (int index : monthsIndecies) {
-            System.out.println(cellDatas.get(index).getEffectiveValue().getStringValue());
+        // this code fails as it takes first months (in case there are month duplicates)
+        Map<String, Pair<Integer, Integer>> months = new HashMap<>();
+        for (GridRange merge : merges) {
+            int startIndex = merge.getStartColumnIndex();
+            months.put(cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase(),
+                    new Pair<>(merge.getStartColumnIndex(),merge.getEndColumnIndex()));
         }
+        System.out.println(months);
+        System.out.println("Finding needed months");
+        System.out.println(startMonth + " columns [" + months.get(startMonth).getKey() + " : " + months.get(startMonth).getValue() + "]");
+        System.out.println(endMonth + " columns [" + months.get(endMonth).getKey() + " : " + months.get(endMonth).getValue() + "]");
+
         //TODO get start end columns
+        int startColumn = months.get(startMonth).getKey() + Integer.valueOf(startDay);
+        int endColumn = months.get(endMonth).getKey() + Integer.valueOf(endDay);
+        System.out.printf("Total range: [%d : %d] %n", startColumn, endColumn);
+
 
         //TODO get white list rows range
 
