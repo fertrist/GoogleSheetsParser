@@ -1,0 +1,35 @@
+# Maven
+target
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea
+
+# Eclipse
+.classpath
+.settings
+.externalToolBuilders
+maven-eclipse.xml
+
+#ActiveMQ
+activemq-data
+build
+
+#log files
+logs
+
+test-output/
+bin/
+
+#Mac OS X
+.DS_Store
+*/DS_Store
+
+#prop files
+
+#emacs
+*~
+[#]*[#]
+.\#*

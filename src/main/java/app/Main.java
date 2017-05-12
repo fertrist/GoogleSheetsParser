@@ -17,11 +17,12 @@ import com.google.api.services.sheets.v4.Sheets;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class Quickstart {
+public class Main {
     /** Application name. */
     private static final String APPLICATION_NAME =
             "Google Sheets API Java Quickstart";
@@ -66,7 +67,7 @@ public class Quickstart {
     public static Credential authorize() throws IOException {
         // Load client secrets.
         InputStream in =
-                Quickstart.class.getResourceAsStream("/client_secret.json");
+                Main.class.getResourceAsStream("/client_secret.json");
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
@@ -99,7 +100,8 @@ public class Quickstart {
     public static void main(String[] args) throws IOException {
         //quickstart();
         //myExample();
-        showColoredData();
+        //showColoredData();
+        parseWeek();
     }
 
     public static void quickstart() throws IOException {
@@ -147,6 +149,59 @@ public class Quickstart {
                 System.out.printf("%s\n", row.get(0));
             }
         }
+    }
+
+    public static void parseWeek() throws IOException {
+        String startDay = "31";
+        String startMonth = "март";
+        String endDay = "4";
+        String endMonth = "май";
+
+        //TODO retrieve all months and get start end months
+        Sheets service = getSheetsService();
+
+        String spreadsheetId = "1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg";
+        String firstRow = "1:1";
+        Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(Collections.singletonList(firstRow)).setIncludeGridData(true).execute();
+        List<Sheet> sheets = spreadsheet.getSheets();
+        Sheet sheet = sheets.get(0);
+        List<GridData> gridDatas = sheet.getData();
+        GridData gridData = gridDatas.get(0);
+        List<RowData> rowDatas = gridData.getRowData();
+        RowData rowData = rowDatas.get(0);
+        System.out.println("Rows : " + rowDatas.size());
+        List<CellData> cellDatas = rowData.getValues();
+        CellData cellData = cellDatas.get(0);
+        for (CellData cell : cellDatas) {
+            if (cell.size() != 0 && cell.getEffectiveValue() != null) {
+                System.out.println(cell.getEffectiveValue().getStringValue());
+            }
+        }
+
+        List<GridRange> merges = sheet.getMerges();
+        List<Integer> monthsIndecies = new ArrayList<>();
+        for (GridRange merge : merges) {
+            monthsIndecies.add(merge.getStartColumnIndex());
+        }
+        System.out.println(monthsIndecies);
+
+        for (int index : monthsIndecies) {
+            System.out.println(cellDatas.get(index).getEffectiveValue().getStringValue());
+        }
+        //TODO get start end columns
+
+        //TODO get white list rows range
+
+        //TODO get blue list rows range
+
+        //TODO get green list rows range
+
+        //TODO get week columns and parse by rows by colored lists
+
+        //TODO print counters
+
+        //TODO: utils - color utils
+        // - define color of column by color range
     }
 
     public static void showColoredData() throws IOException {
