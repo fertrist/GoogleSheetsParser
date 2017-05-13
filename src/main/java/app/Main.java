@@ -18,12 +18,7 @@ import javafx.util.Pair;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Main {
     /** Application name. */
@@ -182,13 +177,16 @@ public class Main {
         }
 
         List<GridRange> merges = sheet.getMerges();
+        merges.sort((Comparator.comparing(GridRange::getStartColumnIndex)));
+        int initialIndex = merges.size() > 12 ? merges.size() - 12 : 0;
+        merges = merges.subList(initialIndex, merges.size());
 
         // this code fails as it takes first months (in case there are month duplicates)
         Map<String, Pair<Integer, Integer>> months = new HashMap<>();
         for (GridRange merge : merges) {
             int startIndex = merge.getStartColumnIndex();
-            months.put(cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase(),
-                    new Pair<>(merge.getStartColumnIndex(),merge.getEndColumnIndex()));
+            String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase();
+            months.put(monthName, new Pair<>(merge.getStartColumnIndex(),merge.getEndColumnIndex()));
         }
         System.out.println(months);
         System.out.println("Finding needed months");
