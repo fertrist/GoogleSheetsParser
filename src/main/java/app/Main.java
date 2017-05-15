@@ -96,170 +96,255 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        //quickstart();
-        //myExample();
-        //showColoredData();
         parseWeek();
     }
 
-    public static void quickstart() throws IOException {
-        // Build a new authorized API client service.
-        Sheets service = getSheetsService();
-
-        // Prints the names and majors of students in a sample spreadsheet:
-        // https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-        String spreadsheetId = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms";
-        String range = "Class Data!A2:E";
-        ValueRange response = service.spreadsheets().values()
-                .get(spreadsheetId, range)
-                .execute();
-        List<List<Object>> values = response.getValues();
-        if (values == null || values.size() == 0) {
-            System.out.println("No data found.");
-        } else {
-            System.out.println("Name, Major");
-            for (List row : values) {
-                // Print columns A and E, which correspond to indices 0 and 4.
-                System.out.printf("%s, %s\n", row.get(0), row.get(4));
-            }
-        }
-    }
-
-
-    public static void myExample() throws IOException {
-        // Build a new authorized API client service.
-        Sheets service = getSheetsService();
-
-        // Prints the names and majors of students in a sample spreadsheet:
-        // https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-        String spreadsheetId = "1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg";
-        String range = "B4:B12";
-        ValueRange response = service.spreadsheets().values()
-                .get(spreadsheetId, range)
-                .execute();
-        List<List<Object>> values = response.getValues();
-        if (values == null || values.size() == 0) {
-            System.out.println("No data found.");
-        } else {
-            System.out.println("Name, Major");
-            for (List row : values) {
-                // Print columns A and E, which correspond to indices 0 and 4.
-                System.out.printf("%s\n", row.get(0));
-            }
-        }
-    }
-
     public static void parseWeek() throws IOException {
-        String startDay = "31";
-        String startMonth = "март";
-        String endDay = "4";
-        String endMonth = "май";
-
-        //TODO retrieve all months and get start end months
+        String groupDay = "4";
+        String dataStartRow = "4";
+        String dataEndRow = "81";
+        String marking = "84";
         Sheets service = getSheetsService();
-
         String spreadsheetId = "1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg";
-        String firstRow = "1:1";
-        Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(Collections.singletonList(firstRow)).setIncludeGridData(true).execute();
-        List<Sheet> sheets = spreadsheet.getSheets();
-        Sheet sheet = sheets.get(0);
-        List<GridData> gridDatas = sheet.getData();
-        GridData gridData = gridDatas.get(0);
-        List<RowData> rowDatas = gridData.getRowData();
-        RowData rowData = rowDatas.get(0);
-        System.out.println("Rows : " + rowDatas.size());
+        String monthsRange = "1:1";
+        String peopleListRange = "B" + dataStartRow + ":B" + dataEndRow;
+        String colorsRange = "B" + marking + ":B" + (Integer.valueOf(marking) + 3);
+
+        Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
+                .setRanges(Arrays.asList(monthsRange, colorsRange, peopleListRange)).setIncludeGridData(true).execute();
+
+        //TODO retrieve all months and get start end months, get start end columns
+        Sheet sheet = spreadsheet.getSheets().get(0);
+        Pair<Integer, Integer> startEndColumn = getStartEndColumnForReport(sheet);
+        System.out.printf("Total range: [%d : %d] %n", startEndColumn.getKey(), startEndColumn.getValue());
+
+        // TODO get colors
+        GridData gridData = sheet.getData().get(1);
+        Map<Marks, Color> colors = parseColors(gridData);
+        System.out.println("Colors:" + colors);
+
+        //TODO get white list rows range
+        List<String> whiteList = new ArrayList<>();
+        List<String> newPeople = new ArrayList<>();
+        List<String> guests = new ArrayList<>();
+        gridData = sheet.getData().get(2);
+        for (int i = 0; i < gridData.getRowData().size(); i++) {
+            RowData r = gridData.getRowData().get(i);
+            if (r == null || r.getValues() == null) {
+                continue;
+            }
+            CellData cellData = r.getValues().get(0);
+            CellFormat effectiveFormat = cellData.getEffectiveFormat();
+            if (!effectiveFormat.getTextFormat().getBold() && cellData.getEffectiveValue() != null) {
+                if (isWhite(effectiveFormat.getBackgroundColor())) {
+                    whiteList.add(i, cellData.getEffectiveValue().getStringValue());
+                } else if (isGrey(effectiveFormat.getBackgroundColor())) {
+                    guests.add(cellData.getEffectiveValue().getStringValue());
+                } else {
+                    newPeople.add(cellData.getEffectiveValue().getStringValue());
+                }
+            }
+        }
+        System.out.println("White list: " + whiteList);
+        System.out.println("New people: " + newPeople);
+        System.out.println("Guests: " + guests);
+
+        List<Week> weeks = new ArrayList<>();
+        for (int weekIndex = 1; weekIndex <= (startEndColumn.getValue() - startEndColumn.getKey()) / 7 + 1; weekIndex++) {
+            weeks.add(new Week(weekIndex));
+        }
+
+        //TODO get week columns and parse by rows by colored lists
+        String dataRange = columnToLetter(startEndColumn.getKey()) + dataStartRow + ":" + columnToLetter(startEndColumn.getValue()) + dataEndRow;
+        spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(Collections.singletonList(dataRange)).setIncludeGridData(true).execute();
+        List<RowData> dataRows = spreadsheet.getSheets().get(0).getData().get(0).getRowData();
+        dataRows.forEach(r -> {
+            int parsedWeek = 0;
+            for (int weekIndex = 1; weekIndex <= weeks.size(); weekIndex++) {
+                List<CellData> weekCells = r.getValues().subList(parsedWeek * 7, weekIndex * 7 - 1);
+                Week week = weeks.get(weekIndex-1);
+                handleWeekCells(week, weekCells, colors);
+                parsedWeek = weekIndex;
+            }
+        });
+
+        //TODO print counters
+    }
+
+    private static void handleWeekCells(Week week, List<CellData> weekCells, Map<Marks, Color> colors) {
+        for (CellData cell : weekCells) {
+            Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
+            if (bgColor.equals(colors.get(Marks.GROUP))) {
+
+            }
+        }
+    }
+
+    private static Pair<Integer, Integer> getStartEndColumnForReport(Sheet monthsSheet) {
+        String startDay = "3";
+        String startMonth = "апрель";
+        String endDay = "30";
+        String endMonth = "апрель";
+        RowData rowData = monthsSheet.getData().get(0).getRowData().get(0);
         List<CellData> cellDatas = rowData.getValues();
-        CellData cellData = cellDatas.get(0);
         for (CellData cell : cellDatas) {
             if (cell.size() != 0 && cell.getEffectiveValue() != null) {
                 System.out.println(cell.getEffectiveValue().getStringValue());
             }
         }
-
-        List<GridRange> merges = sheet.getMerges();
+        List<GridRange> merges = monthsSheet.getMerges();
         merges.sort((Comparator.comparing(GridRange::getStartColumnIndex)));
         int initialIndex = merges.size() > 12 ? merges.size() - 12 : 0;
         merges = merges.subList(initialIndex, merges.size());
-
-        // this code fails as it takes first months (in case there are month duplicates)
         Map<String, Pair<Integer, Integer>> months = new HashMap<>();
         for (GridRange merge : merges) {
             int startIndex = merge.getStartColumnIndex();
             String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase();
             months.put(monthName, new Pair<>(merge.getStartColumnIndex(),merge.getEndColumnIndex()));
         }
-        System.out.println(months);
-        System.out.println("Finding needed months");
-        System.out.println(startMonth + " columns [" + months.get(startMonth).getKey() + " : " + months.get(startMonth).getValue() + "]");
-        System.out.println(endMonth + " columns [" + months.get(endMonth).getKey() + " : " + months.get(endMonth).getValue() + "]");
-
-        //TODO get start end columns
         int startColumn = months.get(startMonth).getKey() + Integer.valueOf(startDay);
         int endColumn = months.get(endMonth).getKey() + Integer.valueOf(endDay);
-        System.out.printf("Total range: [%d : %d] %n", startColumn, endColumn);
-
-
-        //TODO get white list rows range
-
-        //TODO get blue list rows range
-
-        //TODO get green list rows range
-
-        //TODO get week columns and parse by rows by colored lists
-
-        //TODO print counters
-
-        //TODO: utils - color utils
-        // - define color of column by color range
+        return new Pair<>(startColumn, endColumn);
     }
 
-    public static void showColoredData() throws IOException {
-        // Build a new authorized API client service.
-        Sheets service = getSheetsService();
+    private static boolean isWhite(Color color) {
+        return color.getBlue() == 1.0 && color.getGreen() == 1.0 && color.getRed() == 1.0;
+    }
 
-        String spreadsheetId = "1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg";
-        String range = "B2:B12";
+    private static boolean isGrey(Color color) {
+        return color.getBlue().equals(color.getGreen()) && color.getGreen().equals(color.getRed());
+    }
 
-        Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(Collections.singletonList(range)).setIncludeGridData(true).execute();
-        List<Sheet> sheets = spreadsheet.getSheets();
-        Sheet sheet = sheets.get(0);
-        List<GridData> gridDatas = sheet.getData();
-        GridData gridData = gridDatas.get(0);
-        List<RowData> rowDatas = gridData.getRowData();
-        RowData rowData = rowDatas.get(0);
-        System.out.println("Rows : " + rowDatas.size());
-        List<CellData> cellDatas = rowData.getValues();
-        CellData cellData = cellDatas.get(0);
-        CellFormat effectiveFormat = cellData.getEffectiveFormat();
-        ExtendedValue effectiveValue = cellData.getEffectiveValue();
-
-        //TODO algorythm:
-        /*
-        * 1. load first row and define columns for group meetings
-        * 2. define white list rows
-        * 3. define other lists rows
-        * 4. load rows and collect data using indexes which were retrieved
-        * on previous iteration
-        * define guest policy
-        *
-        *
-        * */
-
-        //Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId).setIncludeGridData(true).execute();
-
-        range = "B4:B12";
-        ValueRange response = service.spreadsheets().values()
-                .get(spreadsheetId, range)
-                .execute();
-        List<List<Object>> values = response.getValues();
-        if (values == null || values.size() == 0) {
-            System.out.println("No data found.");
-        } else {
-            System.out.println("Name, Major");
-            for (List row : values) {
-                // Print columns A and E, which correspond to indices 0 and 4.
-                System.out.printf("%s\n", row.get(0));
+    private static Map<Marks, Color> parseColors(GridData gridData) {
+        Map<Marks, Color> colors = new HashMap<>();
+        for (RowData r : gridData.getRowData()) {
+            if (r == null || r.getValues() == null) {
+                continue;
             }
+            CellData cellData = r.getValues().get(0);
+            CellFormat effectiveFormat = cellData.getEffectiveFormat();
+            colors.put(Marks.valueOf(cellData.getEffectiveValue().getStringValue()), effectiveFormat.getBackgroundColor());
+        }
+        return colors;
+    }
+
+    private static String columnToLetter(int column) {
+        if (column < 26) {
+            return Character.toString((char) (64 + column));
+        }
+        int temp;
+        String letter = "";
+        while (column > 0)
+        {
+            temp = (column - 1) % 26;
+            letter = Character.toString((char) (temp + 65)) + letter;
+            column = (column - temp - 1) / 26;
+        }
+        return letter;
+    }
+
+    private enum Counters {
+        GROUP_TOTAL, GROUP_WHITE, GROUP_NEW, GROUP_GUESTS, VISIT_WHITE, VISIT_NEW, MEETING_WHITE, MEETING_NEW, CALL;
+    }
+
+    private enum Marks {
+        GROUP("группа"), VISIT("посещение"), MEETING("встреча"), CALL("звонок");
+
+        private String name;
+
+        Marks(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    private static class Week {
+        int weekNumber;
+        int groupNew = 0;
+        int groupWhite = 0;
+        int meetingNew = 0;
+        int meetingWhite = 0;
+        int visitNew = 0;
+        int visitWhite = 0;
+        List<ArrayList> absentWhite = new ArrayList<>();
+        List<ArrayList> newPeople = new ArrayList<>();
+        List<ArrayList> guests = new ArrayList<>();
+
+        public Week(int weekNumber) {this.weekNumber = weekNumber;}
+
+        public int getGroupNew() {
+            return groupNew;
+        }
+
+        public void setGroupNew(int groupNew) {
+            this.groupNew = groupNew;
+        }
+
+        public int getGroupWhite() {
+            return groupWhite;
+        }
+
+        public void setGroupWhite(int groupWhite) {
+            this.groupWhite = groupWhite;
+        }
+
+        public int getMeetingNew() {
+            return meetingNew;
+        }
+
+        public void setMeetingNew(int meetingNew) {
+            this.meetingNew = meetingNew;
+        }
+
+        public int getMeetingWhite() {
+            return meetingWhite;
+        }
+
+        public void setMeetingWhite(int meetingWhite) {
+            this.meetingWhite = meetingWhite;
+        }
+
+        public int getVisitNew() {
+            return visitNew;
+        }
+
+        public void setVisitNew(int visitNew) {
+            this.visitNew = visitNew;
+        }
+
+        public int getVisitWhite() {
+            return visitWhite;
+        }
+
+        public void setVisitWhite(int visitWhite) {
+            this.visitWhite = visitWhite;
+        }
+
+        public List<ArrayList> getAbsentWhite() {
+            return absentWhite;
+        }
+
+        public void setAbsentWhite(List<ArrayList> absentWhite) {
+            this.absentWhite = absentWhite;
+        }
+
+        public List<ArrayList> getNewPeople() {
+            return newPeople;
+        }
+
+        public void setNewPeople(List<ArrayList> newPeople) {
+            this.newPeople = newPeople;
+        }
+
+        public List<ArrayList> getGuests() {
+            return guests;
+        }
+
+        public void setGuests(List<ArrayList> guests) {
+            this.guests = guests;
         }
     }
 }
