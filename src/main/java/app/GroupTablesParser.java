@@ -1,101 +1,14 @@
 package app;
 
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.util.store.FileDataStoreFactory;
-import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
-import com.sun.org.apache.bcel.internal.generic.NEW;
 import javafx.util.Pair;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Parser {
-    /** Application name. */
-    private static final String APPLICATION_NAME =
-            "Google Sheets API Java Quickstart";
-
-    /** Directory to store user credentials for this application. */
-    private static final java.io.File DATA_STORE_DIR = new java.io.File(
-            System.getProperty("user.home"), ".credentials/sheets.googleapis.com-java-quickstart");
-
-    /** Global instance of the {@link FileDataStoreFactory}. */
-    private static FileDataStoreFactory DATA_STORE_FACTORY;
-
-    /** Global instance of the JSON factory. */
-    private static final JsonFactory JSON_FACTORY =
-            JacksonFactory.getDefaultInstance();
-
-    /** Global instance of the HTTP transport. */
-    private static HttpTransport HTTP_TRANSPORT;
-
-    /** Global instance of the scopes required by this quickstart.
-     *
-     * If modifying these scopes, delete your previously saved credentials
-     * at ~/.credentials/sheets.googleapis.com-java-quickstart
-     */
-    private static final List<String> SCOPES =
-            Arrays.asList(SheetsScopes.SPREADSHEETS_READONLY);
-
-    static {
-        try {
-            HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-            DATA_STORE_FACTORY = new FileDataStoreFactory(DATA_STORE_DIR);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            System.exit(1);
-        }
-    }
-
-    /**
-     * Creates an authorized Credential object.
-     * @return an authorized Credential object.
-     * @throws IOException
-     */
-    public static Credential authorize() throws IOException {
-        // Load client secrets.
-        InputStream in =
-                Parser.class.getResourceAsStream("/client_secret.json");
-        GoogleClientSecrets clientSecrets =
-                GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
-        // Build flow and trigger user authorization request.
-        GoogleAuthorizationCodeFlow flow =
-                new GoogleAuthorizationCodeFlow.Builder(
-                        HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-                        .setDataStoreFactory(DATA_STORE_FACTORY)
-                        .setAccessType("offline")
-                        .build();
-        Credential credential = new AuthorizationCodeInstalledApp(
-                flow, new LocalServerReceiver()).authorize("user");
-        System.out.println(
-                "Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
-        return credential;
-    }
-
-    /**
-     * Build and return an authorized Sheets API client service.
-     * @return an authorized Sheets API client service
-     * @throws IOException
-     */
-    public static Sheets getSheetsService() throws IOException {
-        Credential credential = authorize();
-        return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-    }
+public class GroupTablesParser extends GoogleSheetsApp {
 
     public static void main(String[] args) throws IOException {
         parsePeriod("1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg", "4", "81", "84", "4");
@@ -114,6 +27,7 @@ public class Parser {
         Sheet sheet = spreadsheet.getSheets().get(0);
         Pair<Integer, Integer> startEndColumn = getStartEndColumnForReport(sheet);
         System.out.printf("Total range: [%d : %d] %n", startEndColumn.getKey(), startEndColumn.getValue());
+        System.out.printf("Total range: [%s : %s] %n", columnToLetter(startEndColumn.getKey()), columnToLetter(startEndColumn.getValue()));
 
         // TODO get colors
         GridData gridData = sheet.getData().get(1);
@@ -131,7 +45,7 @@ public class Parser {
             CellData cellData = r.getValues().get(0);
             CellFormat effectiveFormat = cellData.getEffectiveFormat();
             if (!effectiveFormat.getTextFormat().getBold() && cellData.getEffectiveValue() != null) {
-                Category category = null;
+                Category category;
                 if (isWhite(effectiveFormat.getBackgroundColor())) {
                     category = Category.WHITE;
                 } else if (isGrey(effectiveFormat.getBackgroundColor())) {
@@ -146,7 +60,7 @@ public class Parser {
         List<Person> whiteList = people.stream().filter(p -> p.getCategory() == Category.WHITE).collect(Collectors.toList());
 
         List<Week> weeks = new ArrayList<>();
-        for (int weekIndex = 1; weekIndex <= (startEndColumn.getValue() - startEndColumn.getKey()) / 7 + 1; weekIndex++) {
+        for (int weekIndex = 1; weekIndex <= (startEndColumn.getValue() - startEndColumn.getKey()) / 7; weekIndex++) {
             weeks.add(new Week(weekIndex, whiteList));
         }
 
@@ -161,16 +75,26 @@ public class Parser {
         });
 
         //TODO print counters
-        System.out.println(weeks);
+        prettyPrintWeek(weeks);
+    }
+
+    private static void prettyPrintWeek(List<Week> weeks) {
+        String format = "%10s | %10s | %10s | %10s | %10s | %10s | %15s | %15s | %15s | %15s | %10s %n";
+        System.out.printf(format, "Неделя", "По списку", "Было всего", "Cписочных", "Гости", "Новые люди",
+                "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки");
+        for (Week week : weeks) {
+            System.out.printf(format, week.getWeekName(), week.getWhiteList().size(), week.getPresent().size(), week.getPresentByCategory(Category.WHITE).size(),
+                    week.getPresentByCategory(Category.GUEST).size(), week.getPresentByCategory(Category.NEW).size(), week.getVisitWhite(),
+                    week.getMeetingWhite(), week.getVisitNew(), week.getMeetingNew(), week.getCalls());
+        }
     }
 
     private static void handleRow(Person person, RowData row, List<Week> weeks, Integer groupDay, Map<Marks, Color> colors) {
-        int parsedWeek = 0;
-        for (int weekIndex = 1; weekIndex <= weeks.size(); weekIndex++) {
-            List<CellData> weekCells = row.getValues().subList(parsedWeek * 7, weekIndex * 7 - 1);
-            Week week = weeks.get(weekIndex - 1);
+        for (int weekIndex = 0; weekIndex < weeks.size(); weekIndex++) {
+            List<CellData> weekCells = row.getValues().subList(weekIndex * 7, Math.min(weekIndex * 7 + 7, row.getValues().size()));
+            Week week = weeks.get(weekIndex);
 
-            boolean wasPresentOnGroup = areColorsEqual(weekCells.get(groupDay).getEffectiveFormat().getBackgroundColor(), colors.get(Marks.GROUP));
+            boolean wasPresentOnGroup = areColorsEqual(weekCells.get(groupDay-1).getEffectiveFormat().getBackgroundColor(), colors.get(Marks.GROUP));
             if (wasPresentOnGroup) {
                 week.addPresent(person);
             }
@@ -181,7 +105,6 @@ public class Parser {
                 Marks action = getActionByColor(bgColor, colors);
                 week.mergeAction(action, person.getCategory());
             }
-            parsedWeek = weekIndex;
         }
     }
 
@@ -223,7 +146,7 @@ public class Parser {
             months.put(monthName, new Pair<>(merge.getStartColumnIndex(),merge.getEndColumnIndex()));
         }
         int startColumn = months.get(startMonth).getKey() + Integer.valueOf(startDay);
-        int endColumn = months.get(endMonth).getKey() + Integer.valueOf(endDay);
+        int endColumn = months.get(endMonth).getKey() + Integer.valueOf(endDay) + 1;
         return new Pair<>(startColumn, endColumn);
     }
 

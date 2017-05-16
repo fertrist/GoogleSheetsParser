@@ -2,6 +2,8 @@ package app;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class Week {
     private int weekNumber;
@@ -10,6 +12,7 @@ public class Week {
     private int meetingWhite = 0;
     private int visitNew = 0;
     private int visitWhite = 0;
+    private int calls = 0;
 
     private List<Person> whiteList = new ArrayList<>();
     private List<Person> present = new ArrayList<>();
@@ -44,12 +47,32 @@ public class Week {
             if (action == Marks.VISIT) {
                 increaseVisitNew();
             }
+            if (action == Marks.CALL) {
+                increaseCalls();
+            }
         }
+    }
+
+    public List<Person> getWhiteList() {
+        return whiteList;
+    }
+
+    public List<Person> getPresent() {
+        return present;
+    }
+
+    public int getTotalCount() {
+        return present.size();
     }
 
     public int countPresentByCategory(Category category)
     {
         return (int) present.stream().filter(p -> p.getCategory() == category).count();
+    }
+
+    public List<Person> getPresentByCategory(Category category)
+    {
+        return present.stream().filter(p -> p.getCategory() == category).collect(Collectors.toList());
     }
 
     public List<Person> getWhiteAbsent() {
@@ -88,6 +111,11 @@ public class Week {
       this.visitNew++;
     }
 
+    public void increaseCalls()
+    {
+        this.calls++;
+    }
+
     public int getVisitWhite()
     {
       return visitWhite;
@@ -106,6 +134,10 @@ public class Week {
         this.weekNumber = weekNumber;
     }
 
+    public int getCalls() {
+        return calls;
+    }
+
     @Override
     public String toString() {
         return "Week{" +
@@ -114,6 +146,7 @@ public class Week {
                 ", meetingWhite=" + meetingWhite +
                 ", visitNew=" + visitNew +
                 ", visitWhite=" + visitWhite +
+                ", calls=" + calls +
                 ", whiteList=" + whiteList +
                 ", present=" + present +
                 '}';
