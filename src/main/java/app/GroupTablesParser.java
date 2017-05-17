@@ -12,6 +12,8 @@ public class GroupTablesParser extends GoogleSheetsApp {
 
     public static void main(String[] args) throws IOException {
         parsePeriod("1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg", "4", "81", "84", "4");
+
+        //populateReport(service, spreadsheetId, weeks);
     }
 
     public static void parsePeriod(String spreadsheetId, String dataStartRow, String dataEndRow, String markingRow, String groupDay) throws IOException {
@@ -32,7 +34,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         // TODO get colors
         GridData gridData = sheet.getData().get(1);
         Map<Marks, Color> colors = parseColors(gridData);
-        System.out.println("Colors:" + colors);
+        //System.out.println("Colors:" + colors);
 
         //TODO get white list rows range
         List<Person> people = new ArrayList<>();
@@ -56,7 +58,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
                 people.add(new Person(category, cellData.getEffectiveValue().getStringValue(), i));
             }
         }
-        System.out.println("People: " + people);
+        //System.out.println("People: " + people);
         List<Person> whiteList = people.stream().filter(p -> p.getCategory() == Category.WHITE).collect(Collectors.toList());
 
         List<Week> weeks = new ArrayList<>();
@@ -74,8 +76,91 @@ public class GroupTablesParser extends GoogleSheetsApp {
             handleRow(person, row, weeks, Integer.valueOf(groupDay), colors);
         });
 
-        //TODO print counters
+        //TODO print counters / create report
+        populateReport(service, spreadsheetId, weeks);
+    }
+
+    /*private static void test() {
+        String spreadsheetId = "1iV-5GzXelLaazFvVVa9DH5uV7YENi7GNSXgvXEgkeZM";
+        List<Request> requests = new ArrayList<>();
+        // Change the spreadsheet's title.
+        requests.add(new Request()
+                .setUpdateSpreadsheetProperties(new UpdateSpreadsheetPropertiesRequest()
+                        .setProperties(new SpreadsheetProperties()
+                                .setTitle("Ololo"))
+                        .setFields("title")));
+        // Find and replace text.
+        requests.add(new Request()
+                .setFindReplace(new FindReplaceRequest()
+                        .setFind(find)
+                        .setReplacement(replacement)
+                        .setAllSheets(true)));
+        // Add additional requests (operations) ...
+
+        BatchUpdateSpreadsheetRequest body =
+                new BatchUpdateSpreadsheetRequest().setRequests(requests);
+        BatchUpdateSpreadsheetResponse response =
+                service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+        FindReplaceResponse findReplaceResponse = response.getReplies().get(1).getFindReplace();
+        System.out.printf("%d replacements made.", findReplaceResponse.getOccurrencesChanged());
+    }*/
+
+        /*GridRange gridRange = new GridRange();
+        gridRange.setSheetId(542076770);
+        gridRange.setStartColumnIndex(1);
+        gridRange.setStartRowIndex(1);
+        updateCellsRequest.setRange(gridRange);*/
+
+
+    private static void populateReport(Sheets service, String spreadsheetId, List<Week> weeks) throws IOException {
         prettyPrintWeek(weeks);
+        spreadsheetId = "1iV-5GzXelLaazFvVVa9DH5uV7YENi7GNSXgvXEgkeZM"; //test sheet
+
+        List<Request> requests = new ArrayList<>();
+
+        //TODO set header
+        UpdateCellsRequest updateCellsRequest = new UpdateCellsRequest();
+        updateCellsRequest.setFields("*");
+
+        GridCoordinate gridCoordinate = new GridCoordinate();
+        gridCoordinate.setColumnIndex(1);
+        gridCoordinate.setSheetId(542076770);
+        gridCoordinate.setRowIndex(1);
+        updateCellsRequest.setStart(gridCoordinate);
+
+        RowData rowData = new RowData();
+        List<CellData> cellDatas = new ArrayList<>();
+        String [] reportColumns = new String[]{"Неделя", "По списку", "Было всего", "Cписочных", "Гости", "Новые люди",
+                "Как прошла гр.(%)", "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки"};
+        for (String reportColumn : reportColumns) {
+            CellData cellData = new CellData();
+
+            ExtendedValue extendedValue = new ExtendedValue();
+            extendedValue.setStringValue(reportColumn);
+
+            cellData.setUserEnteredValue(extendedValue);
+            cellData.setNote("fdjkfkjflds");
+
+            CellFormat cellFormat = new CellFormat();
+            cellFormat.setBackgroundColor(new Color().setRed(new Float(0.5)));
+
+            cellData.setUserEnteredFormat(cellFormat);
+            cellDatas.add(cellData);
+        }
+        rowData.setValues(cellDatas);
+        updateCellsRequest.setRows(Collections.singletonList(rowData));
+
+
+        // TODO set each row ...
+
+
+        // TODO execute all
+        Request request = new Request();
+        request.setUpdateCells(updateCellsRequest);
+        requests.add(request);
+        BatchUpdateSpreadsheetRequest body =
+                new BatchUpdateSpreadsheetRequest().setRequests(requests);
+        service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
     }
 
     private static void prettyPrintWeek(List<Week> weeks) {

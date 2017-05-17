@@ -44,7 +44,7 @@ abstract public class GoogleSheetsApp {
      * at ~/.credentials/sheets.googleapis.com-java-quickstart
      */
     private static final List<String> SCOPES =
-            Arrays.asList(SheetsScopes.SPREADSHEETS_READONLY);
+            Arrays.asList(SheetsScopes.SPREADSHEETS);
 
     static {
         try {
