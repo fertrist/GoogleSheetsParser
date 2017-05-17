@@ -2,12 +2,12 @@ package app;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class Week {
-    private int weekNumber;
 
+    private String leader;
+    private int weekNumber;
     private int meetingNew = 0;
     private int meetingWhite = 0;
     private int visitNew = 0;
@@ -17,8 +17,9 @@ public class Week {
     private List<Person> whiteList = new ArrayList<>();
     private List<Person> present = new ArrayList<>();
 
-    public Week(int weekNumber, List<Person> whiteList)
+    public Week(String leader, int weekNumber, List<Person> whiteList)
     {
+        this.leader = leader;
         this.weekNumber = weekNumber;
         this.whiteList = whiteList;
     }
@@ -138,10 +139,19 @@ public class Week {
         return calls;
     }
 
+    public String getLeader() {
+        return leader;
+    }
+
+    public void setLeader(String leader) {
+        this.leader = leader;
+    }
+
     @Override
     public String toString() {
         return "Week{" +
-                "weekNumber=" + weekNumber +
+                "leader='" + leader + '\'' +
+                ", weekNumber=" + weekNumber +
                 ", meetingNew=" + meetingNew +
                 ", meetingWhite=" + meetingWhite +
                 ", visitNew=" + visitNew +
