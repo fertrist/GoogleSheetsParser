@@ -28,14 +28,19 @@ public class GroupTablesParser extends GoogleSheetsApp {
         Sheets service = getSheetsService();
         String monthsRange = "1:1";
         String peopleListRange = "B" + dataStartRow + ":B" + dataEndRow;
-        String colorsRange = "B" + markingRow + ":B" + (Integer.valueOf(markingRow) + 3);
+        String colorsRange = "A" + markingRow + ":B" + (Integer.valueOf(markingRow) + 10);
 
         Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
                 .setRanges(Arrays.asList(monthsRange, colorsRange, peopleListRange)).setIncludeGridData(true).execute();
 
         //TODO retrieve all months and get start end months, get start end columns
         Sheet sheet = spreadsheet.getSheets().get(0);
-        Pair<Integer, Integer> startEndColumn = getStartEndColumnForReport(sheet);
+        String startDay = "3";
+        String startMonth = "апрель";
+        String endDay = "30";
+        String endMonth = "апрель";
+
+        Pair<Integer, Integer> startEndColumn = getStartEndColumnForReport(sheet, startDay, startMonth, endDay, endMonth);
         System.out.printf("Total range: [%d : %d] %n", startEndColumn.getKey(), startEndColumn.getValue());
         System.out.printf("Total range: [%s : %s] %n", columnToLetter(startEndColumn.getKey()), columnToLetter(startEndColumn.getValue()));
 
@@ -215,16 +220,13 @@ public class GroupTablesParser extends GoogleSheetsApp {
         return null;
     }
 
-    private static Pair<Integer, Integer> getStartEndColumnForReport(Sheet monthsSheet) {
-        String startDay = "3";
-        String startMonth = "апрель";
-        String endDay = "30";
-        String endMonth = "апрель";
+    private static Pair<Integer, Integer> getStartEndColumnForReport(Sheet monthsSheet, String startDay, String startMonth,
+                                                                     String endDay, String endMonth) {
         RowData rowData = monthsSheet.getData().get(0).getRowData().get(0);
         List<CellData> cellDatas = rowData.getValues();
         for (CellData cell : cellDatas) {
             if (cell.size() != 0 && cell.getEffectiveValue() != null) {
-                System.out.println(cell.getEffectiveValue().getStringValue());
+                //System.out.println(cell.getEffectiveValue().getStringValue());
             }
         }
         List<GridRange> merges = monthsSheet.getMerges();
@@ -248,9 +250,16 @@ public class GroupTablesParser extends GoogleSheetsApp {
             if (r == null || r.getValues() == null) {
                 continue;
             }
-            CellData cellData = r.getValues().get(0);
-            CellFormat effectiveFormat = cellData.getEffectiveFormat();
-            colors.put(Marks.getEnumFor(cellData.getEffectiveValue().getStringValue()), effectiveFormat.getBackgroundColor());
+            CellData colorCell = r.getValues().get(0);
+            CellData nameCell = r.getValues().get(1);
+            if (nameCell.getEffectiveValue() == null || colorCell.getEffectiveFormat() == null
+                    || colorCell.getEffectiveFormat().getBackgroundColor() == null) {
+                continue;
+            }
+            Color backgroundColor = colorCell.getEffectiveFormat().getBackgroundColor();
+            Marks mark = Marks.getEnumFor(nameCell.getEffectiveValue().getStringValue());
+            if (mark != null)
+                colors.put(mark, backgroundColor);
         }
         return colors;
     }
