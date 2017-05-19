@@ -3,27 +3,53 @@ package app;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.Properties;
 
 public class ConfigurationUtil {
 
-    public static final String RESULT_SPREADSHEET_ID = "result.spreadSheetId";
-    public static final String GROUP_COUNT = "group.count";
-    public static final String SPREADSHEET_ID = "spreadSheetId";
-    public static final String LEADER = "leaderName";
-    public static final String ROW_WITH_MONTHS = "rowWithMonths";
-    public static final String GROUP_DAY = "groupDay";
-    public static final String COLORS_ROW = "colorsRow";
-    public static final String DATA_FIRST_ROW = "dataFirstRow";
-    public static final String DATA_LAST_ROW = "dataLastRow";
+    public static final String REPORT_SPREADSHEET_ID = "report.spreadsheet";
+    public static final String REGION_COUNT = "report.region.count";
+    public static final String REPORT_START_DATE = "report.start.date";
+    public static final String REPORT_END_DATE = "report.end.date";
 
+    public static final String SPREADSHEET_ID = "spreadsheet";
+    public static final String LEADER = "leader.name";
+    public static final String ROW_WITH_MONTHS = "row.with.months";
+    public static final String GROUP_DAY = "group.day";
+    public static final String COLORS_ROW = "colors.row";
+    public static final String DATA_FIRST_ROW = "data.first.row";
+    public static final String DATA_LAST_ROW = "data.last.row";
+    public static final String GROUPS = "groups";
+
+    private static final String REGION_PREFIX = "region%d.";
     private static final String GROUP_PREFIX = "group%d.";
     private static final String CONFIGURATION_FILE = "CONFIGURATION_FILE";
+
+    private static String reportSpreadSheetId;
+
+    private static int reportStartDay;
+    private static String reportStartMonth;
+    private static int reportEndDay;
+    private static String reportEndMonth;
 
     static Properties properties;
     static {
         String configurationFile = System.getProperty(CONFIGURATION_FILE);
         properties = new Properties();
+
+        String startDateStr = properties.getProperty(REPORT_START_DATE);
+        LocalDate startDate = LocalDate.parse(startDateStr);
+        reportStartMonth = translateMonth(startDate.getMonth());
+        reportStartDay = startDate.getDayOfMonth();
+
+        String endDateStr = properties.getProperty(REPORT_END_DATE);
+        LocalDate endDate = LocalDate.parse(endDateStr);
+        reportEndMonth = translateMonth(endDate.getMonth());
+        reportEndDay = endDate.getDayOfMonth();
+
+        reportSpreadSheetId = getSpreadsheetId(properties.getProperty(REPORT_SPREADSHEET_ID));
         try {
             properties.load(new InputStreamReader(new FileInputStream(configurationFile)));
         } catch (IOException e) {
@@ -32,8 +58,47 @@ public class ConfigurationUtil {
 
     }
 
-    public static String propForGroup(int groupNumber, String property) {
-        return String.format(GROUP_PREFIX, groupNumber) + property;
+    private static String translateMonth(Month month) {
+        String translation = null;
+        switch (month) {
+            case JANUARY:
+                translation = "январь";
+                break;
+            case FEBRUARY:
+                translation = "февраль";
+                break;
+            case MARCH:
+                translation = "март";
+                break;
+            case APRIL:
+                translation = "апрель";
+                break;
+            case MAY:
+                translation = "май";
+                break;
+            case JUNE:
+                translation = "июнь";
+                break;
+            case JULY:
+                translation = "июль";
+                break;
+            case AUGUST:
+                translation = "август";
+                break;
+            case SEPTEMBER:
+                translation = "сентябрь";
+                break;
+            case OCTOBER:
+                translation = "октябрь";
+                break;
+            case NOVEMBER:
+                translation = "ноябрь";
+                break;
+            case DECEMBER:
+                translation = "декабрь";
+                break;
+        }
+        return translation;
     }
 
     public static Group buildGroup(int groupNo) {
@@ -49,11 +114,44 @@ public class ConfigurationUtil {
     }
 
     private static String getGroupProperty(String property, int groupNo) {
-        return properties.getProperty(propForGroup(groupNo, property));
+        return properties.getProperty(String.format(GROUP_PREFIX, groupNo) + property);
+    }
+
+    public static String getRegionProperty(String property, int regionNo) {
+        return properties.getProperty(String.format(REGION_PREFIX, regionNo) + property);
     }
 
     public static String getProperty(String property) {
         return properties.getProperty(property);
     }
 
+    public static String getSpreadsheetId(String spreadSheetUrl) {
+        String d = "/d/";
+        return spreadSheetUrl.substring(spreadSheetUrl.indexOf(d) + d.length(), spreadSheetUrl.indexOf("/edit"));
+    }
+
+    public static String getSheetGid(String spreadSheetUrl) {
+        String edit = "/edit#gid=";
+        return spreadSheetUrl.substring(spreadSheetUrl.indexOf(edit) + edit.length(), spreadSheetUrl.length());
+    }
+
+    public static String getReportEndMonth() {
+        return reportEndMonth;
+    }
+
+    public static int getReportEndDay() {
+        return reportEndDay;
+    }
+
+    public static String getReportStartMonth() {
+        return reportStartMonth;
+    }
+
+    public static int getReportStartDay() {
+        return reportStartDay;
+    }
+
+    public static String getReportSpreadSheetId() {
+        return reportSpreadSheetId;
+    }
 }
