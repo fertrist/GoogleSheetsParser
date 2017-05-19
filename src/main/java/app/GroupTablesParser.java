@@ -5,14 +5,20 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.Color;
 import com.sun.deploy.util.StringUtils;
 import javafx.util.Pair;
-import sun.java2d.xr.MutableInteger;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static app.GoogleSheetUtil.*;
+import static app.ConfigurationUtil.GROUP_COUNT;
+import static app.ConfigurationUtil.getProperty;
 
+/**
+ * Pass CONFIGURATION_FILE as vm option for example:
+ * -DCONFIGURATION_FILE=/home/myUser/.../resources/report.configuration.properties
+ */
 public class GroupTablesParser extends GoogleSheetsApp {
 
     private static String [] REPORT_COLUMNS = new String[]{"Лидер", "Неделя", "По списку", "Было всего", "Белый список", "Гости", "Новые люди",
@@ -21,10 +27,38 @@ public class GroupTablesParser extends GoogleSheetsApp {
     private static final Color WHITE = getColor(255, 255, 255);
 
     public static void main(String[] args) throws IOException {
-        parsePeriod("fertrist", "1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg", "4", "81", "84", "4");
+        String leader = "Служитель";
+        String spreadSheetId = "1O9zDiEUsYxov30mxtmibVRqW-mCQG7wQ0EXNdC91afg";
+        String dataStartRow = "4";
+        String dataEndRow = "81";
+        String markingRow = "84";
+        String groupDay = "4";
+        String reportSpreadSheetId = "1iV-5GzXelLaazFvVVa9DH5uV7YENi7GNSXgvXEgkeZM";
+
+
+        // TODO get groups data from properties
+        int groupCount = Integer.valueOf(getProperty(GROUP_COUNT));
+        List<Group> groups = IntStream.range(1, ++groupCount)
+                .mapToObj(ConfigurationUtil::buildGroup)
+                .collect(Collectors.toList());
+        groups.forEach(System.out::println);
+
+        // TODO loop through groups
+
+        // TODO report each group
+
+        // TODO add report main header
+
+        // TODO add report main footer
+
+        // TODO report summary
+
+        // TODO make header frozen, create borders, merge leaders cells
+
+        //parsePeriod(leader, spreadSheetId, dataStartRow, dataEndRow, markingRow, groupDay, reportSpreadSheetId);
     }
 
-    public static void parsePeriod(String leader, String spreadsheetId, String dataStartRow, String dataEndRow, String markingRow, String groupDay) throws IOException {
+    public static void parsePeriod(String leader, String spreadsheetId, String dataStartRow, String dataEndRow, String markingRow, String groupDay, String reportSpreadsheetId) throws IOException {
         Sheets service = getSheetsService();
         String monthsRange = "1:1";
         String peopleListRange = "B" + dataStartRow + ":B" + dataEndRow;
@@ -90,12 +124,11 @@ public class GroupTablesParser extends GoogleSheetsApp {
         });
 
         //TODO print counters / create report
-        populateReport(service, spreadsheetId, weeks);
+        printWeeks(service, reportSpreadsheetId, weeks);
     }
 
-    private static void populateReport(Sheets service, String spreadsheetId, List<Week> weeks) throws IOException {
+    private static void printWeeks(Sheets service, String reportSpreadsheetId, List<Week> weeks) throws IOException {
         prettyPrintWeek(weeks);
-        spreadsheetId = "1iV-5GzXelLaazFvVVa9DH5uV7YENi7GNSXgvXEgkeZM"; //test sheet
 
         List<Request> requests = new ArrayList<>();
 
@@ -129,7 +162,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         requests.add(request);
         BatchUpdateSpreadsheetRequest body =
                 new BatchUpdateSpreadsheetRequest().setRequests(requests);
-        service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+        service.spreadsheets().batchUpdate(reportSpreadsheetId, body).execute();
     }
 
     private static RowData getFooterRow(int lastWhiteCount, Set<String> uniqueNewPeople) {
