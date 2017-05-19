@@ -1,6 +1,7 @@
 package app;
 
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
@@ -9,18 +10,19 @@ import java.util.Properties;
 
 public class ConfigurationUtil {
 
-    public static final String REPORT_SPREADSHEET_ID = "report.spreadsheet";
+    public static final String REPORT_SPREADSHEET_URL = "report.spreadsheet.url";
     public static final String REGION_COUNT = "report.region.count";
     public static final String REPORT_START_DATE = "report.start.date";
     public static final String REPORT_END_DATE = "report.end.date";
 
-    public static final String SPREADSHEET_ID = "spreadsheet";
+    public static final String SPREADSHEET_URL = "spreadsheet.url";
     public static final String LEADER = "leader.name";
     public static final String ROW_WITH_MONTHS = "row.with.months";
     public static final String GROUP_DAY = "group.day";
     public static final String COLORS_ROW = "colors.row";
     public static final String DATA_FIRST_ROW = "data.first.row";
     public static final String DATA_LAST_ROW = "data.last.row";
+    public static final String PEOPLE_COLUMN = "people.column";
     public static final String GROUPS = "groups";
 
     private static final String REGION_PREFIX = "region%d.";
@@ -38,6 +40,11 @@ public class ConfigurationUtil {
     static {
         String configurationFile = System.getProperty(CONFIGURATION_FILE);
         properties = new Properties();
+        try {
+            properties.load(new InputStreamReader(new FileInputStream(configurationFile)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         String startDateStr = properties.getProperty(REPORT_START_DATE);
         LocalDate startDate = LocalDate.parse(startDateStr);
@@ -49,13 +56,7 @@ public class ConfigurationUtil {
         reportEndMonth = translateMonth(endDate.getMonth());
         reportEndDay = endDate.getDayOfMonth();
 
-        reportSpreadSheetId = getSpreadsheetId(properties.getProperty(REPORT_SPREADSHEET_ID));
-        try {
-            properties.load(new InputStreamReader(new FileInputStream(configurationFile)));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        reportSpreadSheetId = getSpreadsheetId(properties.getProperty(REPORT_SPREADSHEET_URL));
     }
 
     private static String translateMonth(Month month) {
@@ -103,13 +104,14 @@ public class ConfigurationUtil {
 
     public static Group buildGroup(int groupNo) {
         return Group.builder().groupNumber(groupNo)
-                .spreadSheetId(getGroupProperty(SPREADSHEET_ID, groupNo))
+                .spreadSheetId(getSpreadsheetId(getGroupProperty(SPREADSHEET_URL, groupNo)))
                 .leaderName(getGroupProperty(LEADER, groupNo))
                 .groupDay(getGroupProperty(GROUP_DAY, groupNo))
                 .monthsRow(getGroupProperty(ROW_WITH_MONTHS, groupNo))
                 .markingRow(getGroupProperty(COLORS_ROW, groupNo))
                 .dataStartRow(getGroupProperty(DATA_FIRST_ROW, groupNo))
                 .dataEndRow(getGroupProperty(DATA_LAST_ROW, groupNo))
+                .peopleColumn(getGroupProperty(PEOPLE_COLUMN, groupNo))
                 .build();
     }
 
@@ -130,9 +132,10 @@ public class ConfigurationUtil {
         return spreadSheetUrl.substring(spreadSheetUrl.indexOf(d) + d.length(), spreadSheetUrl.indexOf("/edit"));
     }
 
-    public static String getSheetGid(String spreadSheetUrl) {
+    public static Integer getSheetGid(String spreadSheetUrl) {
         String edit = "/edit#gid=";
-        return spreadSheetUrl.substring(spreadSheetUrl.indexOf(edit) + edit.length(), spreadSheetUrl.length());
+        return Integer.valueOf(spreadSheetUrl.substring(
+                spreadSheetUrl.indexOf(edit) + edit.length(), spreadSheetUrl.length()));
     }
 
     public static String getReportEndMonth() {

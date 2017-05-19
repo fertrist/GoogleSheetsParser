@@ -12,6 +12,7 @@ public class Group {
     private String colorsRow;
     private String dataFirstRow;
     private String dataLastRow;
+    private String peopleColumn;
 
     public Group(Builder builder) {
         this.groupNumber = builder.groupNumber;
@@ -22,6 +23,7 @@ public class Group {
         this.colorsRow = builder.colorsRow;
         this.dataFirstRow = builder.dataFirstRow;
         this.dataLastRow = builder.dataLastRow;
+        this.peopleColumn = builder.peopleColumn;
     }
 
     public static Builder builder() { return new Builder(); }
@@ -36,6 +38,7 @@ public class Group {
         private String colorsRow;
         private String dataFirstRow;
         private String dataLastRow;
+        private String peopleColumn;
 
         public Builder groupNumber(int groupNumber) {
             this.groupNumber = groupNumber;
@@ -77,6 +80,11 @@ public class Group {
             return this;
         }
 
+        public Builder peopleColumn(String peopleColumn) {
+            this.peopleColumn = peopleColumn;
+            return this;
+        }
+
         public Group build() {
             return new Group(this);
         }
@@ -114,6 +122,10 @@ public class Group {
         return dataLastRow;
     }
 
+    public String getPeopleColumn() {
+        return peopleColumn;
+    }
+
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
@@ -125,6 +137,7 @@ public class Group {
                 .add("colorsRow", colorsRow)
                 .add("dataFirstRow", dataFirstRow)
                 .add("dataLastRow", dataLastRow)
+                .add("peopleColumn", peopleColumn)
                 .toString();
     }
 }

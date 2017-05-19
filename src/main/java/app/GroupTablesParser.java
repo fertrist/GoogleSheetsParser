@@ -5,6 +5,7 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.Color;
 import com.sun.deploy.util.StringUtils;
 import javafx.util.Pair;
+import sun.java2d.xr.MutableInteger;
 
 import java.io.IOException;
 import java.util.*;
@@ -29,36 +30,66 @@ public class GroupTablesParser extends GoogleSheetsApp {
     public static void main(String[] args) throws IOException {
         Sheets service = getSheetsService();
 
-        // TODO add report main header
-
-        // TODO add report main footer
-
-        // TODO report summary
-
-        // TODO make header frozen, create borders, merge leaders cells
 
         int regionCount = Integer.valueOf(getProperty(REGION_COUNT));
+        List<RegionData> regions = new ArrayList<>();
         for (int i = 1; i <= regionCount; i++) {
-            processRegion(service, i);
+            regions.add(processRegion(service, i));
         }
+
+        report(service, regions);
     }
 
-    private static void processRegion(Sheets service, int regionNo) throws IOException {
+    private static void report(Sheets service, List<RegionData> regions) throws IOException {
+        MutableInteger rowPointer = new MutableInteger(0);
+        // TODO add report main header (report summary)
+
+        rowPointer.setValue(rowPointer.getValue() + 2);
+        for (RegionData region : regions) {
+            printRegion(service, rowPointer, region);
+        }
+        // TODO make header frozen, create borders, merge leaders cells
+
+        // TODO add report main footer (current summary)
+    }
+
+    private static void printRegion(Sheets service, MutableInteger rowPointer, RegionData region) throws IOException {
+        // TODO print region header
+
+        rowPointer.setValue(rowPointer.getValue() + 1);
+
+        for (Map<String, List<Week>> group : region.getGroups()) {
+            Map.Entry<String, List<Week>> groupEntry = group.entrySet().iterator().next();
+            String groupLeader = groupEntry.getKey();
+            List<Week> groupWeeks = groupEntry.getValue();
+            printWeeks(service, groupLeader, groupWeeks, rowPointer.getValue());
+            rowPointer.setValue(rowPointer.getValue() + groupWeeks.size() + 1);
+        }
+
+    }
+
+    private static RegionData processRegion(Sheets service, int regionNo) throws IOException {
         String regionLeader = getRegionProperty(LEADER, regionNo);
         System.out.println("Processing " + regionLeader + "'s region.");
 
         // get groups data from properties
-        int groupCount = Integer.valueOf(getRegionProperty(GROUPS, regionNo));
-        List<Group> groups = IntStream.range(1, ++groupCount)
-                .mapToObj(ConfigurationUtil::buildGroup)
+        String [] groupNumbers = getRegionProperty(GROUPS, regionNo).split(",");
+        List<Group> groups = Arrays.stream(groupNumbers)
+                .map(Integer::valueOf)
+                .map(ConfigurationUtil::buildGroup)
                 .collect(Collectors.toList());
+
+        //print group properties
         groups.forEach(System.out::println);
 
         // loop through groups, collect and print data
+        RegionData regionData = new RegionData(regionLeader);
         for (Group group : groups) {
-            List<Week> weeks = parseGroup(service, group);
-            printWeeks(service, weeks);
+            Map<String, List<Week>> groupData = new HashMap<>();
+            groupData.put(group.getLeaderName(), parseGroup(service, group));
+            regionData.getGroups().add(groupData);
         }
+        return regionData;
     }
 
     private static List<Week> parseGroup(Sheets service, Group group) throws IOException {
@@ -69,10 +100,12 @@ public class GroupTablesParser extends GoogleSheetsApp {
         String colorsRow = group.getColorsRow();
         String groupDay = group.getGroupDay();
         String rowWithMonths = group.getRowWithMonths();
+        String peopleColumn = group.getPeopleColumn();
 
         String monthsRange = rowWithMonths + ":" + rowWithMonths;
-        String peopleListRange = "B" + dataFirstRow + ":B" + dataLastRow;
-        String colorsRange = "A" + colorsRow + ":B" + (Integer.valueOf(colorsRow) + 10);
+        String peopleListRange = peopleColumn + dataFirstRow + ":" + peopleColumn + dataLastRow;
+        String colorStartColumn = Character.valueOf( (char) (peopleColumn.toCharArray()[0]-1)).toString();
+        String colorsRange = colorStartColumn + colorsRow + ":" + peopleColumn + (Integer.valueOf(colorsRow) + 10);
         // TODO ??? make columns also properties peopleColumn, and based on that get colors column also
 
         Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
@@ -133,8 +166,8 @@ public class GroupTablesParser extends GoogleSheetsApp {
         return weeks;
     }
 
-    private static void printWeeks(Sheets service, List<Week> weeks) throws IOException {
-        prettyPrintWeek(weeks);
+    private static void printWeeks(Sheets service, String groupLeader, List<Week> weeks, int row) throws IOException {
+        prettyPrintWeeks(weeks);
 
         List<Request> requests = new ArrayList<>();
 
@@ -143,13 +176,13 @@ public class GroupTablesParser extends GoogleSheetsApp {
 
         GridCoordinate gridCoordinate = new GridCoordinate();
         gridCoordinate.setColumnIndex(0);
-        gridCoordinate.setSheetId(542076770);
-        gridCoordinate.setRowIndex(1);
+        gridCoordinate.setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
+        gridCoordinate.setRowIndex(row);
         updateCellsRequest.setStart(gridCoordinate);
 
         //set header
         List<RowData> allRows = new ArrayList<>();
-        allRows.add(getHeaderRow());
+        //allRows.add(getHeaderRow());
 
         // set each row
         Set<String> uniqueNewPeople = new HashSet<>();
@@ -220,7 +253,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         return headerRow;
     }
 
-    private static void prettyPrintWeek(List<Week> weeks) {
+    private static void prettyPrintWeeks(List<Week> weeks) {
         String format = "%10s | %10s | %10s | %10s | %10s | %10s | %15s | %15s | %15s | %15s | %10s %n";
         System.out.printf(format, "Неделя", "По списку", "Было всего", "Cписочных", "Гости", "Новые люди",
                 "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки");
