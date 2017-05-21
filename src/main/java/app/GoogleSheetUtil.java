@@ -106,4 +106,33 @@ public class GoogleSheetUtil {
         }
         return letter;
     }
+
+    public static String getWeekDay(int day) {
+        String weekDay = null;
+        switch (day) {
+            case 1:
+                weekDay = "пн";
+                break;
+            case 2:
+                weekDay = "вт";
+                break;
+            case 3:
+                weekDay = "ср";
+                break;
+            case 4:
+                weekDay = "чт";
+                break;
+            case 5:
+                weekDay = "пт";
+                break;
+            case 6:
+                weekDay = "сб";
+                break;
+            case 7:
+                weekDay = "вс";
+                break;
+
+        }
+        return weekDay;
+    }
 }

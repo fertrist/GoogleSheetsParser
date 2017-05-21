@@ -15,7 +15,7 @@ enum Marks {
 
     public static Marks getEnumFor(String value) {
         for (Marks mark : values()) {
-            if (mark.getName().contains(value.toLowerCase())) {
+            if (value.toLowerCase().contains(mark.getName())) {
                 return mark;
             }
         }

@@ -1,5 +1,6 @@
 package app;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,9 +14,13 @@ public class Week {
     private int visitNew = 0;
     private int visitWhite = 0;
     private int calls = 0;
+    private LocalDate start;
+    private LocalDate end;
 
     private List<Person> whiteList = new ArrayList<>();
     private List<Person> present = new ArrayList<>();
+
+    public Week() {}
 
     public Week(String leader, int weekNumber, List<Person> whiteList)
     {
@@ -145,6 +150,50 @@ public class Week {
 
     public void setLeader(String leader) {
         this.leader = leader;
+    }
+
+    public void setMeetingNew(int meetingNew) {
+        this.meetingNew = meetingNew;
+    }
+
+    public void setMeetingWhite(int meetingWhite) {
+        this.meetingWhite = meetingWhite;
+    }
+
+    public void setVisitNew(int visitNew) {
+        this.visitNew = visitNew;
+    }
+
+    public void setVisitWhite(int visitWhite) {
+        this.visitWhite = visitWhite;
+    }
+
+    public void setCalls(int calls) {
+        this.calls = calls;
+    }
+
+    public LocalDate getStart() {
+        return start;
+    }
+
+    public void setStart(LocalDate start) {
+        this.start = start;
+    }
+
+    public LocalDate getEnd() {
+        return end;
+    }
+
+    public void setEnd(LocalDate end) {
+        this.end = end;
+    }
+
+    public void setWhiteList(List<Person> whiteList) {
+        this.whiteList = whiteList;
+    }
+
+    public void setPresent(List<Person> present) {
+        this.present = present;
     }
 
     @Override

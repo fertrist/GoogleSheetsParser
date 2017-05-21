@@ -125,38 +125,30 @@ public class GroupTablesParser extends GoogleSheetsApp {
     }
 
     private static List<Week> parseGroup(Sheets service, Group group) throws IOException {
-        String leader = group.getLeaderName();
         String spreadsheetId = group.getSpreadSheetId();
-        String dataFirstRow = group.getDataFirstRow();
-        String dataLastRow = group.getDataLastRow();
-        String colorsRow = group.getColorsRow();
-        String groupDay = group.getGroupDay();
-        String rowWithMonths = group.getRowWithMonths();
         String peopleColumn = group.getPeopleColumn();
 
-        String monthsRange = rowWithMonths + ":" + rowWithMonths;
-        String peopleListRange = peopleColumn + dataFirstRow + ":" + peopleColumn + dataLastRow;
+        String monthsRange = group.getRowWithMonths() + ":" + group.getRowWithMonths();
+        String peopleListRange = peopleColumn + group.getDataFirstRow() + ":" + peopleColumn + group.getDataLastRow();
         String colorStartColumn = Character.valueOf( (char) (peopleColumn.toCharArray()[0]-1)).toString();
-        String colorsRange = colorStartColumn + colorsRow + ":" + peopleColumn + (Integer.valueOf(colorsRow) + 10);
+        String colorsRange = colorStartColumn + group.getColorsRow() + ":" + peopleColumn + (Integer.valueOf(group.getColorsRow()) + 10);
 
         Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
                 .setRanges(Arrays.asList(monthsRange, colorsRange, peopleListRange)).setIncludeGridData(true).execute();
 
-        //TODO retrieve all months and get start end months, get start end columns
-        Sheet sheet = spreadsheet.getSheets().get(0);
+        //get moths and rough start end columns
+        Sheet sheet = spreadsheet.getSheets().get(0); //sheet object required to get merged cells
+        Pair<Integer, Integer> roughColumnsRange = getRoughColumnsRange(sheet);
+        System.out.printf("roughColumnsRange : [%d : %d] %n", roughColumnsRange.getKey(), roughColumnsRange.getValue());
+        System.out.printf("roughColumnsRange : [%s : %s] %n", columnToLetter(roughColumnsRange.getKey()), columnToLetter(roughColumnsRange.getValue()));
 
-        Pair<Integer, Integer> startEndColumn = getStartEndColumnForReport(sheet);
-        System.out.printf("Total range: [%d : %d] %n", startEndColumn.getKey(), startEndColumn.getValue());
-        System.out.printf("Total range: [%s : %s] %n", columnToLetter(startEndColumn.getKey()), columnToLetter(startEndColumn.getValue()));
-
-        GridData gridData = sheet.getData().get(1);
-        Map<Marks, Color> colors = parseColors(gridData);
+        Map<Marks, Color> colors = parseColors(sheet.getData().get(1));
 
         //TODO get white list rows range
         List<Person> people = new ArrayList<>();
-        gridData = sheet.getData().get(2);
-        for (int i = 0; i < gridData.getRowData().size(); i++) {
-            RowData r = gridData.getRowData().get(i);
+        GridData peopleData = sheet.getData().get(2);
+        for (int i = 0; i < peopleData.getRowData().size(); i++) {
+            RowData r = peopleData.getRowData().get(i);
             if (r == null || r.getValues() == null) {
                 continue;
             }
@@ -178,21 +170,78 @@ public class GroupTablesParser extends GoogleSheetsApp {
         List<Person> whiteList = people.stream().filter(p -> p.getCategory() == Category.WHITE).collect(Collectors.toList());
 
         List<Week> weeks = new ArrayList<>();
-        for (int weekIndex = 1; weekIndex <= (startEndColumn.getValue() - startEndColumn.getKey()) / 7; weekIndex++) {
-            weeks.add(new Week(leader, weekIndex, whiteList));
+        for (int weekIndex = 1; weekIndex <= (roughColumnsRange.getValue() - roughColumnsRange.getKey()) / 7; weekIndex++) {
+            weeks.add(new Week(group.getLeaderName(), weekIndex, whiteList));
         }
 
         //TODO get week columns and parse by rows by colored lists
-        String dataRange = columnToLetter(startEndColumn.getKey()) + dataFirstRow + ":" + columnToLetter(startEndColumn.getValue()) + dataLastRow;
+        String dataRange = columnToLetter(roughColumnsRange.getKey() + 1) + 1 + ":" + columnToLetter(roughColumnsRange.getValue()) + group.getDataLastRow();
         spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(Collections.singletonList(dataRange)).setIncludeGridData(true).execute();
         List<RowData> dataRows = spreadsheet.getSheets().get(0).getData().get(0).getRowData();
-        people.forEach(person -> {
-            RowData row = dataRows.get(person.getIndex());
-            //TODO parse row by weeks
-            handleRow(person, row, weeks, Integer.valueOf(groupDay), colors);
-        });
+        parseWeeksFromSheetData(dataRows, Integer.valueOf(group.getDataFirstRow()), people, Integer.valueOf(group.getGroupDay()), colors);
 
         return weeks;
+    }
+
+    private static List<Week> parseWeeksFromSheetData(List<RowData> dataRows, int dataFirstRow, List<Person> people,
+                                                      Integer groupDay, Map<Marks, Color> colors) {
+        dataFirstRow--; // offset because of indexing
+
+        // define exact start end
+        RowData monthsRow = dataRows.get(0);
+        List<CellData> monthsCells = monthsRow.getValues();
+        RowData datesRow = dataRows.get(2);
+        List<CellData> datesCells = monthsRow.getValues();
+
+        int startColumn = 0, endColumn = 0;
+        for (int i = 0; i < dataRows.get(0).getValues().size(); i++) {
+            String month = "";
+            if (monthsCells.get(i).getEffectiveValue() != null) {
+                month = monthsCells.get(i).getEffectiveValue().getStringValue();
+            }
+            if (month.equalsIgnoreCase(getReportStartMonth())
+                    && datesCells.get(i).getEffectiveValue().getStringValue()
+                    .equalsIgnoreCase(String.valueOf(getReportStartDay()))) {
+                startColumn = i;
+            }
+            if (month.equalsIgnoreCase(getReportEndMonth())
+                    && datesCells.get(i).getEffectiveValue().getStringValue()
+                    .equalsIgnoreCase(String.valueOf(getReportEndDay()))) {
+                endColumn = i;
+            }
+        }
+
+        RowData daysRow = dataRows.get(1);
+        List<CellData> daysCells = daysRow.getValues();
+
+        String groupWeekDay = getWeekDay(groupDay);
+        List<Week> weeks = new ArrayList<>();
+        for (int i = startColumn; i <= endColumn;) {
+            String weekDay;
+            Week week = new Week();
+            int weekIndex = i;
+
+            do {
+                weekDay = daysCells.get(weekIndex).getEffectiveValue().getStringValue();
+                for (Person person : people) {
+                    RowData personRow = dataRows.get(dataFirstRow + person.getIndex());
+                    List<CellData> weekCells = personRow.getValues();
+                    weekCells.get(weekIndex);
+                }
+                weekIndex++;
+            } while (!weekDay.equalsIgnoreCase("вс"));
+            weeks.add(week);
+            i += 7;
+        }
+
+
+
+        for (Person person : people) {
+            RowData personRow = dataRows.get(dataFirstRow + person.getIndex());
+            handleRow(person, personRow, null, Integer.valueOf(groupDay), colors);
+        }
+
+        return null;
     }
 
     private static void printWeeks(Sheets service, String groupLeader, List<Week> weeks, int row) throws IOException {
@@ -300,6 +349,30 @@ public class GroupTablesParser extends GoogleSheetsApp {
         }
         int startColumn = months.get(getReportStartMonth()).getKey() + getReportStartDay();
         int endColumn = months.get(getReportEndMonth()).getKey() + getReportEndDay() + 1;
+        return new Pair<>(startColumn, endColumn);
+    }
+
+    private static Pair<Integer, Integer> getRoughColumnsRange(Sheet monthsSheet) {
+        RowData monthsRow = monthsSheet.getData().get(0).getRowData().get(0);
+        List<CellData> cellDatas = monthsRow.getValues();
+        List<GridRange> merges = monthsSheet.getMerges();
+        merges.sort((Comparator.comparing(GridRange::getStartColumnIndex)));
+
+        int initialIndex = merges.size() > 12 ? merges.size() - 12 : 0;
+        merges = merges.subList(initialIndex, merges.size());
+
+        int startColumn = 0;
+        int endColumn = 0;
+        for (GridRange merge : merges) {
+            int startIndex = merge.getStartColumnIndex();
+            String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase();
+            if (monthName.equalsIgnoreCase(getReportStartMonth())) {
+                startColumn = merge.getStartColumnIndex();
+            }
+            if (monthName.equalsIgnoreCase(getReportEndMonth())) {
+                endColumn = merge.getEndColumnIndex();
+            }
+        }
         return new Pair<>(startColumn, endColumn);
     }
 
