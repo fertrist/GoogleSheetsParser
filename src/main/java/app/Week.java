@@ -1,6 +1,5 @@
 package app;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,8 +13,8 @@ public class Week {
     private int visitNew = 0;
     private int visitWhite = 0;
     private int calls = 0;
-    private LocalDate start;
-    private LocalDate end;
+    private String start;
+    private String end;
 
     private List<Person> whiteList = new ArrayList<>();
     private List<Person> present = new ArrayList<>();
@@ -172,28 +171,28 @@ public class Week {
         this.calls = calls;
     }
 
-    public LocalDate getStart() {
-        return start;
-    }
-
-    public void setStart(LocalDate start) {
-        this.start = start;
-    }
-
-    public LocalDate getEnd() {
-        return end;
-    }
-
-    public void setEnd(LocalDate end) {
-        this.end = end;
-    }
-
     public void setWhiteList(List<Person> whiteList) {
         this.whiteList = whiteList;
     }
 
     public void setPresent(List<Person> present) {
         this.present = present;
+    }
+
+    public String getStart() {
+        return start;
+    }
+
+    public void setStart(String start) {
+        this.start = start;
+    }
+
+    public String getEnd() {
+        return end;
+    }
+
+    public void setEnd(String end) {
+        this.end = end;
     }
 
     @Override

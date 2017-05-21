@@ -166,82 +166,83 @@ public class GroupTablesParser extends GoogleSheetsApp {
                 people.add(new Person(category, cellData.getEffectiveValue().getStringValue(), i));
             }
         }
-        //System.out.println("People: " + people);
-        List<Person> whiteList = people.stream().filter(p -> p.getCategory() == Category.WHITE).collect(Collectors.toList());
 
-        List<Week> weeks = new ArrayList<>();
+        /*List<Week> weeks = new ArrayList<>();
         for (int weekIndex = 1; weekIndex <= (roughColumnsRange.getValue() - roughColumnsRange.getKey()) / 7; weekIndex++) {
             weeks.add(new Week(group.getLeaderName(), weekIndex, whiteList));
-        }
+        }*/
 
         //TODO get week columns and parse by rows by colored lists
         String dataRange = columnToLetter(roughColumnsRange.getKey() + 1) + 1 + ":" + columnToLetter(roughColumnsRange.getValue()) + group.getDataLastRow();
         spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(Collections.singletonList(dataRange)).setIncludeGridData(true).execute();
         List<RowData> dataRows = spreadsheet.getSheets().get(0).getData().get(0).getRowData();
-        parseWeeksFromSheetData(dataRows, Integer.valueOf(group.getDataFirstRow()), people, Integer.valueOf(group.getGroupDay()), colors);
-
-        return weeks;
+        return parseWeeksFromSheetData(dataRows, Integer.valueOf(group.getDataFirstRow()), people, Integer.valueOf(group.getGroupDay()), colors);
     }
 
     private static List<Week> parseWeeksFromSheetData(List<RowData> dataRows, int dataFirstRow, List<Person> people,
                                                       Integer groupDay, Map<Marks, Color> colors) {
         dataFirstRow--; // offset because of indexing
+        List<Person> whiteList = people.stream().filter(p -> p.getCategory() == Category.WHITE).collect(Collectors.toList());
 
         // define exact start end
         RowData monthsRow = dataRows.get(0);
         List<CellData> monthsCells = monthsRow.getValues();
+        RowData daysRow = dataRows.get(1);
+        List<CellData> daysCells = daysRow.getValues();
         RowData datesRow = dataRows.get(2);
-        List<CellData> datesCells = monthsRow.getValues();
-
+        List<CellData> datesCells = datesRow.getValues();
         int startColumn = 0, endColumn = 0;
-        for (int i = 0; i < dataRows.get(0).getValues().size(); i++) {
-            String month = "";
-            if (monthsCells.get(i).getEffectiveValue() != null) {
-                month = monthsCells.get(i).getEffectiveValue().getStringValue();
-            }
+        String month = "";
+        for (int i = 0; i < datesCells.size(); i++) {
+            int monthIndex = Math.min(i, monthsCells.size() - 1);
+            month = monthsCells.get(monthIndex).getEffectiveValue() != null
+                    ? monthsCells.get(monthIndex).getEffectiveValue().getStringValue().toLowerCase() : month;
+            Double day = datesCells.get(i).getEffectiveValue().getNumberValue();
             if (month.equalsIgnoreCase(getReportStartMonth())
-                    && datesCells.get(i).getEffectiveValue().getStringValue()
-                    .equalsIgnoreCase(String.valueOf(getReportStartDay()))) {
+                    && day.equals((double) getReportStartDay())) {
                 startColumn = i;
             }
             if (month.equalsIgnoreCase(getReportEndMonth())
-                    && datesCells.get(i).getEffectiveValue().getStringValue()
-                    .equalsIgnoreCase(String.valueOf(getReportEndDay()))) {
+                    && day.equals((double) getReportEndDay())) {
                 endColumn = i;
             }
         }
 
-        RowData daysRow = dataRows.get(1);
-        List<CellData> daysCells = daysRow.getValues();
-
         String groupWeekDay = getWeekDay(groupDay);
         List<Week> weeks = new ArrayList<>();
-        for (int i = startColumn; i <= endColumn;) {
-            String weekDay;
+        for (int weekIndex = startColumn; weekIndex <= endColumn; weekIndex++) {
             Week week = new Week();
-            int weekIndex = i;
+            week.setWhiteList(whiteList);
+            week.setStart(datesCells.get(weekIndex).getEffectiveValue().getStringValue());
 
-            do {
-                weekDay = daysCells.get(weekIndex).getEffectiveValue().getStringValue();
-                for (Person person : people) {
-                    RowData personRow = dataRows.get(dataFirstRow + person.getIndex());
-                    List<CellData> weekCells = personRow.getValues();
-                    weekCells.get(weekIndex);
-                }
-                weekIndex++;
-            } while (!weekDay.equalsIgnoreCase("вс"));
+            // parse week for each guy
+            int dayIndex = 0;
+            for (Person person : people) {
+                dayIndex = weekIndex - 1;
+                RowData personRow = dataRows.get(dataFirstRow + person.getIndex());
+                List<CellData> weekCells = personRow.getValues();
+                String weekDay;
+                do {
+                    dayIndex++;
+                    weekDay = daysCells.get(dayIndex).getEffectiveValue().getStringValue();
+                    CellData cell = weekCells.get(dayIndex);
+                    if (cell.getEffectiveFormat() == null || cell.getEffectiveFormat().getBackgroundColor() == null) continue;
+                    if (weekDay.equalsIgnoreCase(groupWeekDay)) {
+                        boolean wasPresentOnGroup = areColorsEqual(weekCells.get(groupDay-1).getEffectiveFormat().getBackgroundColor(), colors.get(Marks.GROUP));
+                        if (wasPresentOnGroup) {
+                            week.addPresent(person);
+                        }
+                    }
+                    Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
+                    Marks action = getActionByColor(bgColor, colors);
+                    week.mergeAction(action, person.getCategory());
+                } while (!weekDay.equalsIgnoreCase("вс"));
+            }
+            weekIndex += (dayIndex - weekIndex);
+            week.setEnd(datesCells.get(weekIndex).getEffectiveValue().getStringValue());
             weeks.add(week);
-            i += 7;
         }
-
-
-
-        for (Person person : people) {
-            RowData personRow = dataRows.get(dataFirstRow + person.getIndex());
-            handleRow(person, personRow, null, Integer.valueOf(groupDay), colors);
-        }
-
-        return null;
+        return weeks;
     }
 
     private static void printWeeks(Sheets service, String groupLeader, List<Week> weeks, int row) throws IOException {
