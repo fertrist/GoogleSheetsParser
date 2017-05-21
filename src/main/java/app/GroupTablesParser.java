@@ -3,18 +3,17 @@ package app;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.Color;
-import com.sun.deploy.util.StringUtils;
 import javafx.util.Pair;
 import sun.java2d.xr.MutableInteger;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static app.ConfigurationUtil.*;
 import static app.GoogleSheetUtil.*;
 import static app.ConfigurationUtil.getProperty;
+import static app.ReportTableHelper.*;
 
 /**
  * Pass CONFIGURATION_FILE as vm option for example:
@@ -22,40 +21,74 @@ import static app.ConfigurationUtil.getProperty;
  */
 public class GroupTablesParser extends GoogleSheetsApp {
 
-    private static String [] REPORT_COLUMNS = new String[]{"Лидер", "Неделя", "По списку", "Было всего", "Белый список", "Гости", "Новые люди",
-            "Как прошла гр.(%)", "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки"};
-    private static final Color YELLOW = getColor(255, 255, 102);
-    private static final Color WHITE = getColor(255, 255, 255);
-
     public static void main(String[] args) throws IOException {
         Sheets service = getSheetsService();
-
 
         int regionCount = Integer.valueOf(getProperty(REGION_COUNT));
         List<RegionData> regions = new ArrayList<>();
         for (int i = 1; i <= regionCount; i++) {
             regions.add(processRegion(service, i));
         }
-
         report(service, regions);
     }
 
     private static void report(Sheets service, List<RegionData> regions) throws IOException {
-        MutableInteger rowPointer = new MutableInteger(0);
-        // TODO add report main header (report summary)
+        UpdateCellsRequest updateHeaderRequest = new UpdateCellsRequest();
+        updateHeaderRequest.setFields("*");
 
+        GridCoordinate headerGridCoordinate = new GridCoordinate();
+        headerGridCoordinate.setColumnIndex(0);
+        headerGridCoordinate.setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
+        headerGridCoordinate.setRowIndex(0);
+        updateHeaderRequest.setStart(headerGridCoordinate);
+
+        // TODO add report main header (report summary)
+        List<RowData> headers = new ArrayList<>();
+        headers.add(getTitleHeader());
+        headers.add(getHeaderRow());
+        updateHeaderRequest.setRows(headers);
+
+        MutableInteger rowPointer = new MutableInteger(0);
         rowPointer.setValue(rowPointer.getValue() + 2);
+        int totalNewCount = 0;
+        int totalWhiteCount = 0;
         for (RegionData region : regions) {
             printRegion(service, rowPointer, region);
+            totalNewCount += region.getTotalNewCount();
+            totalWhiteCount += region.getTotalWhiteCount();
         }
+        // TODO add report main footer (current summary)
+        UpdateCellsRequest updateFooterRequest = new UpdateCellsRequest();
+        updateFooterRequest.setFields("*");
+
+        GridCoordinate footerGridCoordinate = new GridCoordinate();
+        footerGridCoordinate.setColumnIndex(0);
+        footerGridCoordinate.setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
+        footerGridCoordinate.setRowIndex(rowPointer.getValue());
+        updateFooterRequest.setStart(footerGridCoordinate);
+
+        List<RowData> footers = new ArrayList<>();
+        footers.add(getReportFooterRow(totalWhiteCount, totalNewCount));
+
+        updateFooterRequest.setRows(footers);
+
         // TODO make header frozen, create borders, merge leaders cells
 
-        // TODO add report main footer (current summary)
+        List<Request> requests = new ArrayList<>();
+        Request headerRequest = new Request();
+        headerRequest.setUpdateCells(updateHeaderRequest);
+        requests.add(headerRequest);
+        Request footerRequest = new Request();
+        footerRequest.setUpdateCells(updateFooterRequest);
+        requests.add(footerRequest);
+
+        BatchUpdateSpreadsheetRequest body =
+                new BatchUpdateSpreadsheetRequest().setRequests(requests);
+        service.spreadsheets().batchUpdate(getReportSpreadSheetId(), body).execute();
     }
 
     private static void printRegion(Sheets service, MutableInteger rowPointer, RegionData region) throws IOException {
         // TODO print region header
-
         rowPointer.setValue(rowPointer.getValue() + 1);
 
         for (Map<String, List<Week>> group : region.getGroups()) {
@@ -65,7 +98,6 @@ public class GroupTablesParser extends GoogleSheetsApp {
             printWeeks(service, groupLeader, groupWeeks, rowPointer.getValue());
             rowPointer.setValue(rowPointer.getValue() + groupWeeks.size() + 1);
         }
-
     }
 
     private static RegionData processRegion(Sheets service, int regionNo) throws IOException {
@@ -106,7 +138,6 @@ public class GroupTablesParser extends GoogleSheetsApp {
         String peopleListRange = peopleColumn + dataFirstRow + ":" + peopleColumn + dataLastRow;
         String colorStartColumn = Character.valueOf( (char) (peopleColumn.toCharArray()[0]-1)).toString();
         String colorsRange = colorStartColumn + colorsRow + ":" + peopleColumn + (Integer.valueOf(colorsRow) + 10);
-        // TODO ??? make columns also properties peopleColumn, and based on that get colors column also
 
         Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
                 .setRanges(Arrays.asList(monthsRange, colorsRange, peopleListRange)).setIncludeGridData(true).execute();
@@ -118,10 +149,8 @@ public class GroupTablesParser extends GoogleSheetsApp {
         System.out.printf("Total range: [%d : %d] %n", startEndColumn.getKey(), startEndColumn.getValue());
         System.out.printf("Total range: [%s : %s] %n", columnToLetter(startEndColumn.getKey()), columnToLetter(startEndColumn.getValue()));
 
-        // TODO get colors
         GridData gridData = sheet.getData().get(1);
         Map<Marks, Color> colors = parseColors(gridData);
-        //System.out.println("Colors:" + colors);
 
         //TODO get white list rows range
         List<Person> people = new ArrayList<>();
@@ -182,7 +211,6 @@ public class GroupTablesParser extends GoogleSheetsApp {
 
         //set header
         List<RowData> allRows = new ArrayList<>();
-        //allRows.add(getHeaderRow());
 
         // set each row
         Set<String> uniqueNewPeople = new HashSet<>();
@@ -192,7 +220,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         int lastWhiteCount = weeks.get(weeks.size() - 1).getWhiteList().size();
 
         //add footer
-        allRows.add(getFooterRow(lastWhiteCount, uniqueNewPeople));
+        allRows.add(getWeekFooterRow(lastWhiteCount, uniqueNewPeople));
 
         //execute all
         updateCellsRequest.setRows(allRows);
@@ -202,21 +230,6 @@ public class GroupTablesParser extends GoogleSheetsApp {
         BatchUpdateSpreadsheetRequest body =
                 new BatchUpdateSpreadsheetRequest().setRequests(requests);
         service.spreadsheets().batchUpdate(getReportSpreadSheetId(), body).execute();
-    }
-
-    private static RowData getFooterRow(int lastWhiteCount, Set<String> uniqueNewPeople) {
-        RowData footerRow = new RowData();
-        List<CellData> footerCells = new ArrayList<>();
-        footerCells.add(getCellWithBgColor("Итого:", YELLOW));
-        footerCells.add(getCellWithValue(""));
-        footerCells.add(getCellWithBgColor(lastWhiteCount, YELLOW));
-        footerCells.add(getCellWithBgColor(YELLOW));
-        footerCells.add(getCellWithValue(""));
-        footerCells.add(getCellWithBgColor(YELLOW));
-        footerCells.add(getCellWithBgColor(uniqueNewPeople.size(), YELLOW).setNote(StringUtils.join(uniqueNewPeople, "\n")));
-        footerCells.add(getCellWithBgColor(YELLOW));
-        footerRow.setValues(footerCells);
-        return footerRow;
     }
 
     private static RowData getWeekRow(Week week, Set<String> newPeople) {
@@ -240,28 +253,6 @@ public class GroupTablesParser extends GoogleSheetsApp {
         rowData.setValues(Arrays.asList(leader, weekName, listWhite, presentTotal, presentWhite, presentGuests,
                 presentNew, groupRate, visitsWhite, meetingsWhite, visitsNew, meetingsNew, callsNew));
         return rowData;
-    }
-
-    private static RowData getHeaderRow() {
-        RowData headerRow = new RowData();
-        List<CellData> headerCells = new ArrayList<>();
-        for (String reportColumn : REPORT_COLUMNS) {
-            CellData cellData = getCellWithBgColor(reportColumn, YELLOW);
-            headerCells.add(cellData);
-        }
-        headerRow.setValues(headerCells);
-        return headerRow;
-    }
-
-    private static void prettyPrintWeeks(List<Week> weeks) {
-        String format = "%10s | %10s | %10s | %10s | %10s | %10s | %15s | %15s | %15s | %15s | %10s %n";
-        System.out.printf(format, "Неделя", "По списку", "Было всего", "Cписочных", "Гости", "Новые люди",
-                "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки");
-        for (Week week : weeks) {
-            System.out.printf(format, week.getWeekName(), week.getWhiteList().size(), week.getPresent().size(), week.getPresentByCategory(Category.WHITE).size(),
-                    week.getPresentByCategory(Category.GUEST).size(), week.getPresentByCategory(Category.NEW).size(), week.getVisitWhite(),
-                    week.getMeetingWhite(), week.getVisitNew(), week.getMeetingNew(), week.getCalls());
-        }
     }
 
     private static void handleRow(Person person, RowData row, List<Week> weeks, Integer groupDay, Map<Marks, Color> colors) {
@@ -305,7 +296,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         for (GridRange merge : merges) {
             int startIndex = merge.getStartColumnIndex();
             String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase();
-            months.put(monthName, new Pair<>(merge.getStartColumnIndex(),merge.getEndColumnIndex()));
+            months.put(monthName, new Pair<>(merge.getStartColumnIndex(), merge.getEndColumnIndex()));
         }
         int startColumn = months.get(getReportStartMonth()).getKey() + getReportStartDay();
         int endColumn = months.get(getReportEndMonth()).getKey() + getReportEndDay() + 1;

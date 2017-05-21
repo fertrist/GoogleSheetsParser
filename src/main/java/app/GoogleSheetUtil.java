@@ -78,7 +78,8 @@ public class GoogleSheetUtil {
     }
 
     public static boolean areColorsEqual(Color color1, Color color2) {
-        return Objects.equals(color1.getBlue(), color2.getBlue())
+        return (color1 == color2) || (color1 != null && color2 != null)
+                && Objects.equals(color1.getBlue(), color2.getBlue())
                 && Objects.equals(color1.getRed(), color2.getRed())
                 && Objects.equals(color1.getGreen(), color2.getGreen());
     }

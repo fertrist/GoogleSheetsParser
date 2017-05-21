@@ -1,7 +1,7 @@
 package app;
 
 enum Marks {
-    GROUP("группа"), VISIT("посещение"), MEETING("встреча"), CALL("звонок");
+    GROUP("групп"), VISIT("посещени"), MEETING("встреч"), CALL("звон");
 
     private String name;
 
@@ -15,7 +15,7 @@ enum Marks {
 
     public static Marks getEnumFor(String value) {
         for (Marks mark : values()) {
-            if (mark.getName().equals(value)) {
+            if (mark.getName().contains(value.toLowerCase())) {
                 return mark;
             }
         }
