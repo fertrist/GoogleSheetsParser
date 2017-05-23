@@ -34,14 +34,16 @@ public class RegionData {
     }
 
     public int getTotalNewCount() {
-        Set<String> set = new HashSet<>();
+        List<String> list = new ArrayList<>();
         for (Map<String, List<Week>> group : groups) {
+            Set<String> innerSet = new HashSet<>();
             Map.Entry<String, List<Week>> entry = group.entrySet().iterator().next();
             for (Week week : entry.getValue()) {
-                set.addAll(week.getPresentByCategory(Category.NEW).stream().map(Person::getName).collect(Collectors.toSet()));
+                innerSet.addAll(week.getPresentByCategory(Category.NEW).stream().map(Person::getName).collect(Collectors.toSet()));
             }
+            list.addAll(innerSet);
         }
-        return set.size();
+        return list.size();
     }
 
     public int getTotalWhiteCount() {

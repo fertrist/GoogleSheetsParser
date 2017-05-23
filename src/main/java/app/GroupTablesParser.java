@@ -47,7 +47,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         // TODO add report main header (report summary)
         List<RowData> headers = new ArrayList<>();
         headers.add(getTitleHeader());
-        headers.add(getHeaderRow());
+        headers.add(getReportHeader());
         updateHeaderRequest.setRows(headers);
 
         MutableInteger rowPointer = new MutableInteger(0);
@@ -300,7 +300,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         List<RowData> allRows = new ArrayList<>();
 
         // set each row
-        List<String> uniqueNewPeople = new ArrayList<>();
+        Set<String> uniqueNewPeople = new HashSet<>();
         for (Week week : weeks) {
             allRows.add(getWeekRow(week, groupLeader, uniqueNewPeople));
         }
@@ -319,7 +319,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         service.spreadsheets().batchUpdate(getReportSpreadSheetId(), body).execute();
     }
 
-    private static RowData getWeekRow(Week week, String groupLeader, List<String> newPeople) {
+    private static RowData getWeekRow(Week week, String groupLeader, Set<String> newPeople) {
         RowData rowData = new RowData();
 
         CellData leader = getCellWithValue(groupLeader);

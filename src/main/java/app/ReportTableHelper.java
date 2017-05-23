@@ -27,15 +27,18 @@ public class ReportTableHelper {
 
         headerCells.add(getCellWithBgColor(String.format("Динамический отчет за: \n %s : %s",
                 ConfigurationUtil.getReportStartDate(), ConfigurationUtil.getReportEndDate()), BLUE));
-        for (int i = 0; i < 6; i++) {
-            headerCells.add(getCellWithBgColor(BLUE));
-        }
+        headerCells.add(getCellWithBgColor(BLUE));
+        headerCells.add(getCellWithBgColor(ConfigurationUtil.getProperty(ConfigurationUtil.PREVIOUS_WHITE_COUNT), BLUE));
+        headerCells.add(getCellWithBgColor(BLUE));
+        headerCells.add(getCellWithBgColor(BLUE));
+        headerCells.add(getCellWithBgColor(BLUE));
+        headerCells.add(getCellWithBgColor(ConfigurationUtil.getProperty(ConfigurationUtil.PREVIOUS_NEW_COUNT), BLUE));
 
         titleRow.setValues(headerCells);
         return titleRow;
     }
 
-    public static RowData getHeaderRow() {
+    public static RowData getReportHeader() {
         RowData headerRow = new RowData();
         List<CellData> headerCells = new ArrayList<>();
         for (String reportColumn : REPORT_COLUMNS) {
@@ -57,7 +60,7 @@ public class ReportTableHelper {
         }
     }
 
-    public static RowData getWeekFooterRow(int lastWhiteCount, List<String> uniqueNewPeople) {
+    public static RowData getWeekFooterRow(int lastWhiteCount, Set<String> uniqueNewPeople) {
         RowData footerRow = new RowData();
         List<CellData> footerCells = new ArrayList<>();
         footerCells.add(getCellWithBgColor("Итого:", YELLOW));

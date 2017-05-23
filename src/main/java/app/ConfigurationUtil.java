@@ -13,6 +13,8 @@ public class ConfigurationUtil {
     public static final String REGION_COUNT = "report.region.count";
     public static final String REPORT_START_DATE = "report.start.date";
     public static final String REPORT_END_DATE = "report.end.date";
+    public static final String PREVIOUS_WHITE_COUNT = "previous.white.count";
+    public static final String PREVIOUS_NEW_COUNT = "previous.new.count";
 
     public static final String SPREADSHEET_URL = "spreadsheet.url";
     public static final String LEADER = "leader.name";
@@ -29,6 +31,8 @@ public class ConfigurationUtil {
     private static final String CONFIGURATION_FILE = "CONFIGURATION_FILE";
 
     private static String reportSpreadSheetId;
+    private static String previousWhiteCount;
+    private static String previousNewCount;
 
     private static int reportStartDay;
     private static String reportStartMonth;
@@ -169,5 +173,13 @@ public class ConfigurationUtil {
 
     public static void setReportStartDate(String reportStartDate) {
         ConfigurationUtil.reportStartDate = reportStartDate;
+    }
+
+    public static String getPreviousWhiteCount() {
+        return previousWhiteCount;
+    }
+
+    public static String getPreviousNewCount() {
+        return previousNewCount;
     }
 }
