@@ -1,7 +1,6 @@
 package app;
 
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
@@ -33,8 +32,10 @@ public class ConfigurationUtil {
 
     private static int reportStartDay;
     private static String reportStartMonth;
+    private static String reportStartDate;
     private static int reportEndDay;
     private static String reportEndMonth;
+    private static String reportEndDate;
 
     static Properties properties;
     static {
@@ -46,13 +47,13 @@ public class ConfigurationUtil {
             e.printStackTrace();
         }
 
-        String startDateStr = properties.getProperty(REPORT_START_DATE);
-        LocalDate startDate = LocalDate.parse(startDateStr);
+        reportStartDate = properties.getProperty(REPORT_START_DATE);
+        LocalDate startDate = LocalDate.parse(reportStartDate);
         reportStartMonth = translateMonth(startDate.getMonth());
         reportStartDay = startDate.getDayOfMonth();
 
-        String endDateStr = properties.getProperty(REPORT_END_DATE);
-        LocalDate endDate = LocalDate.parse(endDateStr);
+        reportEndDate = properties.getProperty(REPORT_END_DATE);
+        LocalDate endDate = LocalDate.parse(reportEndDate);
         reportEndMonth = translateMonth(endDate.getMonth());
         reportEndDay = endDate.getDayOfMonth();
 
@@ -156,5 +157,17 @@ public class ConfigurationUtil {
 
     public static String getReportSpreadSheetId() {
         return reportSpreadSheetId;
+    }
+
+    public static String getReportStartDate() {
+        return reportStartDate;
+    }
+
+    public static String getReportEndDate() {
+        return reportEndDate;
+    }
+
+    public static void setReportStartDate(String reportStartDate) {
+        ConfigurationUtil.reportStartDate = reportStartDate;
     }
 }

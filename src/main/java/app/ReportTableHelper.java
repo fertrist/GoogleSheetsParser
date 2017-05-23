@@ -17,15 +17,18 @@ public class ReportTableHelper {
 
     private static String [] REPORT_COLUMNS = new String[]{"Лидер", "Неделя", "По списку", "Было всего", "Белый список", "Гости", "Новые люди",
             "Как прошла гр.(%)", "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки"};
-    private static final Color YELLOW = getColor(255, 255, 102);
+    public static final Color YELLOW = getColor(255, 214, 93);
+    public static final Color BLUE = getColor(45, 131, 255);
+    public static final Color GREY = getColor(134, 133, 135);
 
     public static RowData getTitleHeader() {
         RowData titleRow = new RowData();
         List<CellData> headerCells = new ArrayList<>();
 
-        headerCells.add(getCellWithBgColor("Отчет", getColor(255, 255, 0)));
+        headerCells.add(getCellWithBgColor(String.format("Динамический отчет за: \n %s : %s",
+                ConfigurationUtil.getReportStartDate(), ConfigurationUtil.getReportEndDate()), BLUE));
         for (int i = 0; i < 6; i++) {
-            headerCells.add(getCellWithBgColor(getColor(255, 255, 0)));
+            headerCells.add(getCellWithBgColor(BLUE));
         }
 
         titleRow.setValues(headerCells);
@@ -54,7 +57,7 @@ public class ReportTableHelper {
         }
     }
 
-    public static RowData getWeekFooterRow(int lastWhiteCount, Set<String> uniqueNewPeople) {
+    public static RowData getWeekFooterRow(int lastWhiteCount, List<String> uniqueNewPeople) {
         RowData footerRow = new RowData();
         List<CellData> footerCells = new ArrayList<>();
         footerCells.add(getCellWithBgColor("Итого:", YELLOW));

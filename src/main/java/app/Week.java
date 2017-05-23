@@ -29,7 +29,7 @@ public class Week {
     }
 
     public String getWeekName() {
-        return "Week-" + weekNumber;
+        return start + "-" + end;
     }
 
     public void addPresent(Person person) {
@@ -183,16 +183,16 @@ public class Week {
         return start;
     }
 
-    public void setStart(String start) {
-        this.start = start;
+    public void setStart(int month, int day) {
+        this.start = String.format("%02d.%02d", day, month);
     }
 
     public String getEnd() {
         return end;
     }
 
-    public void setEnd(String end) {
-        this.end = end;
+    public void setEnd(int month, int day) {
+        this.end = String.format("%02d.%02d", day, month);
     }
 
     @Override

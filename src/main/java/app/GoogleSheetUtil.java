@@ -71,9 +71,9 @@ public class GoogleSheetUtil {
 
     public static Color getColor(int red, int green, int blue) {
         Color color = new Color();
-        color.setRed((float) (red / 255));
-        color.setGreen((float) (green / 255));
-        color.setBlue((float) (blue / 255));
+        color.setRed((float) (red / 255.0));
+        color.setGreen((float) (green / 255.0));
+        color.setBlue((float) (blue / 255.0));
         return color;
     }
 
@@ -135,4 +135,48 @@ public class GoogleSheetUtil {
         }
         return weekDay;
     }
+
+    public static int getMonthNumber(String month) {
+        int number = 0;
+        switch (month.toLowerCase()) {
+            case "январь":
+                number = 1;
+                break;
+            case "февраль":
+                number = 2;
+                break;
+            case "март":
+                number = 3;
+                break;
+            case "апрель":
+                number = 4;
+                break;
+            case "май":
+                number = 5;
+                break;
+            case "июнь":
+                number = 6;
+                break;
+            case "июль":
+                number = 7;
+                break;
+            case "август":
+                number = 8;
+                break;
+            case "сентябрь":
+                number = 9;
+                break;
+            case "октябрь":
+                number = 10;
+                break;
+            case "ноябрь":
+                number = 11;
+                break;
+            case "декабрь":
+                number = 12;
+                break;
+        }
+        return number;
+    }
+
 }
