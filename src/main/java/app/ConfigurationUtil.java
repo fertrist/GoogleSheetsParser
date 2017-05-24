@@ -13,6 +13,7 @@ public class ConfigurationUtil {
     public static final String REGION_COUNT = "report.region.count";
     public static final String REPORT_START_DATE = "report.start.date";
     public static final String REPORT_END_DATE = "report.end.date";
+    public static final String REPORT_TITLE = "report.title";
     public static final String PREVIOUS_WHITE_COUNT = "previous.white.count";
     public static final String PREVIOUS_NEW_COUNT = "previous.new.count";
 

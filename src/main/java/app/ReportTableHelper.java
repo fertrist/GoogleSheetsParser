@@ -18,7 +18,7 @@ public class ReportTableHelper {
     private static String [] REPORT_COLUMNS = new String[]{"Лидер", "Неделя", "По списку", "Было всего", "Белый список", "Гости", "Новые люди",
             "Как прошла гр.(%)", "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки"};
     public static final Color YELLOW = getColor(255, 214, 93);
-    public static final Color BLUE = getColor(45, 131, 255);
+    public static final Color BLUE = getColor(147, 176, 255);
     public static final Color GREY = getColor(134, 133, 135);
 
     public static RowData getTitleHeader() {
@@ -88,6 +88,10 @@ public class ReportTableHelper {
         footerCells.add(getCellWithValue(""));
         footerRow.setValues(footerCells);
         return footerRow;
+    }
+
+    public static String[] getReportColumns() {
+        return REPORT_COLUMNS;
     }
 
 }

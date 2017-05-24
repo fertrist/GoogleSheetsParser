@@ -75,14 +75,26 @@ public class GroupTablesParser extends GoogleSheetsApp {
         updateFooterRequest.setRows(footers);
 
         // TODO make header frozen, create borders, merge leaders cells
+        UpdateBordersRequest updateBordersRequest = new UpdateBordersRequest();
+        GridRange borderRange = new GridRange().setStartColumnIndex(0).setEndColumnIndex(getReportColumns().length + 1)
+                .setStartRowIndex(1).setEndRowIndex(rowPointer.getValue() + 1).setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
+        updateBordersRequest.setRange(borderRange);
+        Border border = new Border().setColor(getColor(0, 0, 0)).setStyle("SOLID");
+        updateBordersRequest.setTop(border).setLeft(border).setBottom(border).setRight(border)
+                .setInnerHorizontal(border).setInnerVertical(border);
+
+        UpdateSheetPropertiesRequest sheetPropertiesRequest = new UpdateSheetPropertiesRequest().setFields("*");
+        GridProperties gridProperties = new GridProperties().setFrozenRowCount(2).setRowCount(100).setColumnCount(getReportColumns().length);
+
+        SheetProperties sheetProperties = new SheetProperties().setGridProperties(gridProperties)
+                .setTitle(getProperty(REPORT_TITLE)).setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
+        sheetPropertiesRequest.setProperties(sheetProperties);
 
         List<Request> requests = new ArrayList<>();
-        Request headerRequest = new Request();
-        headerRequest.setUpdateCells(updateHeaderRequest);
-        requests.add(headerRequest);
-        Request footerRequest = new Request();
-        footerRequest.setUpdateCells(updateFooterRequest);
-        requests.add(footerRequest);
+        requests.add(new Request().setUpdateCells(updateHeaderRequest));
+        requests.add(new Request().setUpdateCells(updateFooterRequest));
+        requests.add(new Request().setUpdateBorders(updateBordersRequest));
+        requests.add(new Request().setUpdateSheetProperties(sheetPropertiesRequest));
 
         BatchUpdateSpreadsheetRequest body =
                 new BatchUpdateSpreadsheetRequest().setRequests(requests);
@@ -97,15 +109,23 @@ public class GroupTablesParser extends GoogleSheetsApp {
 
         GridCoordinate gridCoordinate = new GridCoordinate().setColumnIndex(0)
             .setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL))).setRowIndex(rowPointer.getValue());
-        rowPointer.setValue(rowPointer.getValue() + 1);
 
         updateCellsRequest.setStart(gridCoordinate);
 
         updateCellsRequest.setRows(singletonList(new RowData().setValues(
-                Lists.asList(getCellWithBgColor(region.getLeader(), GREY), Collections.nCopies(12, getCellWithBgColor(GREY)).toArray(new CellData[12])))
-                )
-        );
+            Lists.asList(getCellWithBgColor(region.getLeader(), GREY), Collections.nCopies(12, getCellWithBgColor(GREY)).toArray(new CellData[12])))
+        ));
+
+        MergeCellsRequest mergeCellsRequest = new MergeCellsRequest().setMergeType("MERGE_ALL");
+        GridRange range = new GridRange().setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)))
+                .setStartRowIndex(rowPointer.getValue()).setEndRowIndex(rowPointer.getValue() + 1)
+                .setStartColumnIndex(0).setEndColumnIndex(getReportColumns().length);
+        mergeCellsRequest.setRange(range);
+
+        rowPointer.setValue(rowPointer.getValue() + 1);
+
         requests.add(new Request().setUpdateCells(updateCellsRequest));
+        requests.add(new Request().setMergeCells(mergeCellsRequest));
 
         BatchUpdateSpreadsheetRequest body =
                 new BatchUpdateSpreadsheetRequest().setRequests(requests);
