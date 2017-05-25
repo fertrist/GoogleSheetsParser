@@ -35,12 +35,14 @@ public class GroupTablesParser extends GoogleSheetsApp {
     }
 
     private static void report(Sheets service, List<RegionData> regions) throws IOException {
+        Integer sheetGid = getSheetGid(getProperty(REPORT_SPREADSHEET_URL));
+
         UpdateCellsRequest updateHeaderRequest = new UpdateCellsRequest();
         updateHeaderRequest.setFields("*");
 
         GridCoordinate headerGridCoordinate = new GridCoordinate();
         headerGridCoordinate.setColumnIndex(0);
-        headerGridCoordinate.setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
+        headerGridCoordinate.setSheetId(sheetGid);
         headerGridCoordinate.setRowIndex(0);
         updateHeaderRequest.setStart(headerGridCoordinate);
 
@@ -65,7 +67,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
 
         GridCoordinate footerGridCoordinate = new GridCoordinate();
         footerGridCoordinate.setColumnIndex(0);
-        footerGridCoordinate.setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
+        footerGridCoordinate.setSheetId(sheetGid);
         footerGridCoordinate.setRowIndex(rowPointer.getValue());
         updateFooterRequest.setStart(footerGridCoordinate);
 
@@ -74,27 +76,45 @@ public class GroupTablesParser extends GoogleSheetsApp {
 
         updateFooterRequest.setRows(footers);
 
-        // TODO make header frozen, create borders, merge leaders cells
+        // TODO make header frozen, create borders
         UpdateBordersRequest updateBordersRequest = new UpdateBordersRequest();
         GridRange borderRange = new GridRange().setStartColumnIndex(0).setEndColumnIndex(getReportColumns().length + 1)
-                .setStartRowIndex(1).setEndRowIndex(rowPointer.getValue() + 1).setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
+                .setStartRowIndex(1).setEndRowIndex(rowPointer.getValue() + 1).setSheetId(sheetGid);
         updateBordersRequest.setRange(borderRange);
         Border border = new Border().setColor(getColor(0, 0, 0)).setStyle("SOLID");
         updateBordersRequest.setTop(border).setLeft(border).setBottom(border).setRight(border)
                 .setInnerHorizontal(border).setInnerVertical(border);
 
-        UpdateSheetPropertiesRequest sheetPropertiesRequest = new UpdateSheetPropertiesRequest().setFields("*");
-        GridProperties gridProperties = new GridProperties().setFrozenRowCount(2).setRowCount(100).setColumnCount(getReportColumns().length);
+        UpdateSheetPropertiesRequest freezeHeaderUpdateTitleRequest = new UpdateSheetPropertiesRequest().setFields("*");
+        GridProperties gridProperties = new GridProperties().setFrozenRowCount(2).setRowCount(100)
+                .setColumnCount(getReportColumns().length);
 
         SheetProperties sheetProperties = new SheetProperties().setGridProperties(gridProperties)
-                .setTitle(getProperty(REPORT_TITLE)).setSheetId(getSheetGid(getProperty(REPORT_SPREADSHEET_URL)));
-        sheetPropertiesRequest.setProperties(sheetProperties);
+                .setTitle(getProperty(REPORT_TITLE)).setSheetId(sheetGid);
+        freezeHeaderUpdateTitleRequest.setProperties(sheetProperties);
+
+        // align all cells
+        RepeatCellRequest alignAllCellsRequest = new RepeatCellRequest().setFields("userEnteredFormat.horizontal_alignment")
+            .setRange(borderRange.setStartRowIndex(0))
+            .setCell(new CellData().setUserEnteredFormat(new CellFormat().setHorizontalAlignment("CENTER")));
+
+        MergeCellsRequest mergeTitleNameRequest = new MergeCellsRequest().setMergeType("MERGE_ALL")
+                .setRange(new GridRange().setStartRowIndex(0).setEndRowIndex(1).setStartColumnIndex(0).setEndColumnIndex(2)
+                        .setSheetId(sheetGid));
+        // resize columns
+        /*UpdateDimensionPropertiesRequest resizeRequest = new UpdateDimensionPropertiesRequest().setFields("")
+                .setRange(new DimensionRange().setDimension("COLUMNS").setSheetId(sheetGid)
+                        .setStartIndex(0).setEndIndex(getReportColumns().length + 1))
+                .setProperties(new DimensionProperties().setPixelSize())*/
 
         List<Request> requests = new ArrayList<>();
         requests.add(new Request().setUpdateCells(updateHeaderRequest));
         requests.add(new Request().setUpdateCells(updateFooterRequest));
         requests.add(new Request().setUpdateBorders(updateBordersRequest));
-        requests.add(new Request().setUpdateSheetProperties(sheetPropertiesRequest));
+        requests.add(new Request().setUpdateSheetProperties(freezeHeaderUpdateTitleRequest));
+        requests.add(new Request().setRepeatCell(alignAllCellsRequest));
+        requests.add(new Request().setMergeCells(mergeTitleNameRequest));
+        //requests.add(new Request().setUpdateDimensionProperties(resizeRequest));
 
         BatchUpdateSpreadsheetRequest body =
                 new BatchUpdateSpreadsheetRequest().setRequests(requests);
@@ -210,6 +230,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         //TODO get week columns and parse by rows by colored lists
         String dataRange = columnToLetter(roughColumnsRange.getKey() + 1) + 1 + ":" + columnToLetter(roughColumnsRange.getValue()) + group.getDataLastRow();
         spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(singletonList(dataRange)).setIncludeGridData(true).execute();
+
         List<RowData> dataRows = spreadsheet.getSheets().get(0).getData().get(0).getRowData();
         return parseWeeksFromSheetData(dataRows, Integer.valueOf(group.getDataFirstRow()), people, Integer.valueOf(group.getGroupDay()), colors);
     }
