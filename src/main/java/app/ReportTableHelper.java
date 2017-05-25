@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static app.GoogleSheetUtil.getCellWithBgColor;
-import static app.GoogleSheetUtil.getCellWithValue;
-import static app.GoogleSheetUtil.getColor;
+import static app.Util.getCellWithBgColor;
+import static app.Util.getCellWithValue;
+import static app.Util.getColor;
 
 public class ReportTableHelper {
 

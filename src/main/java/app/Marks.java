@@ -1,22 +1,27 @@
 package app;
 
 enum Marks {
-    GROUP("групп"), VISIT("посещени"), MEETING("встреч"), CALL("звон");
+    GROUP(new String[]{"групп", "домашк"}),
+    VISIT(new String[]{"посещени"}),
+    MEETING(new String[]{"встреч"}),
+    CALL(new String[]{"звон"});
 
-    private String name;
+    private String[] possibleValues;
 
-    Marks(String name) {
-        this.name = name;
+    Marks(String [] possibleValues) {
+        this.possibleValues = possibleValues;
     }
 
-    public String getName() {
-        return name;
+    public String [] getPossibleValues() {
+        return possibleValues;
     }
 
     public static Marks getEnumFor(String value) {
         for (Marks mark : values()) {
-            if (value.toLowerCase().contains(mark.getName())) {
-                return mark;
+            for (String possibleValue : mark.getPossibleValues()) {
+                if (value.toLowerCase().contains(possibleValue)) {
+                    return mark;
+                }
             }
         }
         return null;

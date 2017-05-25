@@ -37,7 +37,7 @@ public class Week {
     }
 
     public void mergeAction(Marks action, Category category) {
-        if (category == Category.WHITE) {
+        if (category == Category.WHITE || category == Category.GUEST) {
             if (action == Marks.MEETING) {
                 increaseMeetingWhite();
             }

@@ -7,10 +7,11 @@ import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.sun.deploy.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class GoogleSheetUtil {
+public class Util {
 
     public static String listToNote(List<Person> people) {
         return StringUtils.join(people.stream().map(Person::getName).collect(Collectors.toList()), "\n");
@@ -179,4 +180,11 @@ public class GoogleSheetUtil {
         return number;
     }
 
+    static int findMonthForColumn(Map<String, List<Integer>> map, int c) {
+        String month = null;
+        for (Map.Entry<String, List<Integer>> entry : map.entrySet()) {
+            if (entry.getValue().contains(c)) month = entry.getKey();
+        }
+        return getMonthNumber(month);
+    }
 }

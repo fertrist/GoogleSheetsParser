@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static app.ConfigurationUtil.*;
-import static app.GoogleSheetUtil.*;
+import static app.Util.*;
 import static app.ConfigurationUtil.getProperty;
 import static app.ReportTableHelper.*;
 import static java.util.Collections.singletonList;
@@ -133,7 +133,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         updateCellsRequest.setStart(gridCoordinate);
 
         updateCellsRequest.setRows(singletonList(new RowData().setValues(
-            Lists.asList(getCellWithBgColor(region.getLeader(), GREY), Collections.nCopies(12, getCellWithBgColor(GREY)).toArray(new CellData[12])))
+                        Lists.asList(getCellWithBgColor(region.getLeader(), GREY), Collections.nCopies(12, getCellWithBgColor(GREY)).toArray(new CellData[12])))
         ));
 
         MergeCellsRequest mergeCellsRequest = new MergeCellsRequest().setMergeType("MERGE_ALL");
@@ -155,7 +155,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
             Map.Entry<String, List<Week>> groupEntry = group.entrySet().iterator().next();
             String groupLeader = groupEntry.getKey();
             List<Week> groupWeeks = groupEntry.getValue();
-            printWeeks(service, groupLeader, groupWeeks, rowPointer.getValue());
+            reportWeeks(service, groupLeader, groupWeeks, rowPointer.getValue());
             rowPointer.setValue(rowPointer.getValue() + groupWeeks.size() + 1);
         }
     }
@@ -232,11 +232,11 @@ public class GroupTablesParser extends GoogleSheetsApp {
         spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(singletonList(dataRange)).setIncludeGridData(true).execute();
 
         List<RowData> dataRows = spreadsheet.getSheets().get(0).getData().get(0).getRowData();
-        return parseWeeksFromSheetData(dataRows, Integer.valueOf(group.getDataFirstRow()), people, Integer.valueOf(group.getGroupDay()), colors);
+        return parseWeeks(dataRows, Integer.valueOf(group.getDataFirstRow()), people, Integer.valueOf(group.getGroupDay()), colors);
     }
 
-    private static List<Week> parseWeeksFromSheetData(List<RowData> dataRows, int dataFirstRow, List<Person> people,
-                                                      Integer groupDay, Map<Marks, Color> colors) {
+    private static List<Week> parseWeeks(List<RowData> dataRows, int dataFirstRow, List<Person> people,
+                                         Integer groupDay, Map<Marks, Color> colors) {
         dataFirstRow--; // offset because of indexing
         List<Person> whiteList = people.stream().filter(p -> p.getCategory() == Category.WHITE).collect(Collectors.toList());
 
@@ -315,15 +315,7 @@ public class GroupTablesParser extends GoogleSheetsApp {
         return weeks;
     }
 
-    private static int findMonthForColumn(Map<String, List<Integer>> map, int c) {
-        String month = null;
-        for (Map.Entry<String, List<Integer>> entry : map.entrySet()) {
-            if (entry.getValue().contains(c)) month = entry.getKey();
-        }
-        return getMonthNumber(month);
-    }
-
-    private static void printWeeks(Sheets service, String groupLeader, List<Week> weeks, int row) throws IOException {
+    private static void reportWeeks(Sheets service, String groupLeader, List<Week> weeks, int row) throws IOException {
         prettyPrintWeeks(weeks);
 
         List<Request> requests = new ArrayList<>();
@@ -383,25 +375,6 @@ public class GroupTablesParser extends GoogleSheetsApp {
         return rowData;
     }
 
-    private static void handleRow(Person person, RowData row, List<Week> weeks, Integer groupDay, Map<Marks, Color> colors) {
-        for (int weekIndex = 0; weekIndex < weeks.size(); weekIndex++) {
-            List<CellData> weekCells = row.getValues().subList(weekIndex * 7, Math.min(weekIndex * 7 + 7, row.getValues().size()));
-            Week week = weeks.get(weekIndex);
-
-            boolean wasPresentOnGroup = areColorsEqual(weekCells.get(groupDay-1).getEffectiveFormat().getBackgroundColor(), colors.get(Marks.GROUP));
-            if (wasPresentOnGroup) {
-                week.addPresent(person);
-            }
-            // parse all cells then
-            for (CellData cell : weekCells) {
-                if (cell.getEffectiveFormat() == null || cell.getEffectiveFormat().getBackgroundColor() == null) continue;
-                Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
-                Marks action = getActionByColor(bgColor, colors);
-                week.mergeAction(action, person.getCategory());
-            }
-        }
-    }
-
     private static Marks getActionByColor(Color color, Map<Marks, Color> colors) {
         for (Map.Entry<Marks, Color> e : colors.entrySet()) {
             if (areColorsEqual(e.getValue(), color)) {
@@ -409,26 +382,6 @@ public class GroupTablesParser extends GoogleSheetsApp {
             }
         }
         return null;
-    }
-
-    private static Pair<Integer, Integer> getStartEndColumnForReport(Sheet monthsSheet) {
-        RowData rowData = monthsSheet.getData().get(0).getRowData().get(0);
-        List<CellData> cellDatas = rowData.getValues();
-
-        List<GridRange> merges = monthsSheet.getMerges();
-        merges.sort((Comparator.comparing(GridRange::getStartColumnIndex)));
-
-        int initialIndex = merges.size() > 12 ? merges.size() - 12 : 0;
-        merges = merges.subList(initialIndex, merges.size());
-        Map<String, Pair<Integer, Integer>> months = new HashMap<>();
-        for (GridRange merge : merges) {
-            int startIndex = merge.getStartColumnIndex();
-            String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase();
-            months.put(monthName, new Pair<>(merge.getStartColumnIndex(), merge.getEndColumnIndex()));
-        }
-        int startColumn = months.get(getReportStartMonth()).getKey() + getReportStartDay();
-        int endColumn = months.get(getReportEndMonth()).getKey() + getReportEndDay() + 1;
-        return new Pair<>(startColumn, endColumn);
     }
 
     private static Pair<Integer, Integer> getRoughColumnsRange(Sheet monthsSheet) {
@@ -445,10 +398,10 @@ public class GroupTablesParser extends GoogleSheetsApp {
         for (GridRange merge : merges) {
             int startIndex = merge.getStartColumnIndex();
             String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase();
-            if (monthName.equalsIgnoreCase(getReportStartMonth())) {
+            if (monthName.contains(getReportStartMonth())) {
                 startColumn = merge.getStartColumnIndex();
             }
-            if (monthName.equalsIgnoreCase(getReportEndMonth())) {
+            if (monthName.contains(getReportEndMonth())) {
                 endColumn = merge.getEndColumnIndex();
             }
         }
