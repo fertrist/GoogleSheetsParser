@@ -253,8 +253,8 @@ public class GroupTablesParser extends GoogleSheetsApp {
         for (int i = 0; i < datesCells.size(); i++) {
             int monthIndex = Math.min(i, monthsCells.size() - 1);
 
-            String newMonth = monthsCells.get(monthIndex).getEffectiveValue() != null
-                    ? monthsCells.get(monthIndex).getEffectiveValue().getStringValue().toLowerCase() : month;
+            String newMonth = getMonthFromString(monthsCells.get(monthIndex).getEffectiveValue() != null
+                    ? monthsCells.get(monthIndex).getEffectiveValue().getStringValue().toLowerCase() : month);
             if (!newMonth.equals(month)) {
                 month = newMonth;
                 columnToMonthMap.put(month, new ArrayList<>());

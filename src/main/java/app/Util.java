@@ -13,6 +13,23 @@ import java.util.stream.Collectors;
 
 public class Util {
 
+    private enum Month {
+        JAN("январь"), FEB("февраль"), MAR("март"),
+        APR("апрель"), MAY("май"), JUN("июнь"),
+        JUL("июль"), AUG("август"), SEP("сентябрь"),
+        OCT("октябрь"), NOV("ноябрь"), DEC("декабрь");
+
+        private String translation;
+
+        Month(String translation) {
+            this.translation = translation;
+        }
+
+        public String getName() {
+            return translation;
+        }
+    }
+
     public static String listToNote(List<Person> people) {
         return StringUtils.join(people.stream().map(Person::getName).collect(Collectors.toList()), "\n");
     }
@@ -178,6 +195,17 @@ public class Util {
                 break;
         }
         return number;
+    }
+
+    public static String getMonthFromString(String rawString) {
+        rawString = rawString.toLowerCase();
+        String month = "";
+        for (Month m : Month.values()) {
+            if (rawString.contains(m.getName())) {
+                month = m.getName();
+            }
+        }
+        return month;
     }
 
     static int findMonthForColumn(Map<String, List<Integer>> map, int c) {
