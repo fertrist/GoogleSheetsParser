@@ -397,7 +397,9 @@ public class GroupTablesParser extends GoogleSheetsApp {
         int endColumn = 0;
         for (GridRange merge : merges) {
             int startIndex = merge.getStartColumnIndex();
-            String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue().toLowerCase();
+            String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue();
+            if (monthName == null) continue;
+            monthName = monthName.toLowerCase();
             if (monthName.contains(getReportStartMonth())) {
                 startColumn = merge.getStartColumnIndex();
             }
