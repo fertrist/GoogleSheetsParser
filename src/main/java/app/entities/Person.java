@@ -1,4 +1,6 @@
-package app;
+package app.entities;
+
+import app.enums.Category;
 
 public class Person {
 

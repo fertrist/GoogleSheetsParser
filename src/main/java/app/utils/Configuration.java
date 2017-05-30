@@ -1,4 +1,6 @@
-package app;
+package app.utils;
+
+import app.entities.Group;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -7,7 +9,7 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.util.Properties;
 
-public class ConfigurationUtil {
+public class Configuration {
 
     public static final String REPORT_SPREADSHEET_URL = "report.spreadsheet.url";
     public static final String REGION_COUNT = "report.region.count";
@@ -173,7 +175,7 @@ public class ConfigurationUtil {
     }
 
     public static void setReportStartDate(String reportStartDate) {
-        ConfigurationUtil.reportStartDate = reportStartDate;
+        Configuration.reportStartDate = reportStartDate;
     }
 
     public static String getPreviousWhiteCount() {

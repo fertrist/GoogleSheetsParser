@@ -1,4 +1,4 @@
-package app;
+package app.entities;
 
 import com.google.common.base.Objects;
 

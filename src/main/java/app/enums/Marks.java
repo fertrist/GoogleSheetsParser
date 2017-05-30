@@ -1,6 +1,6 @@
-package app;
+package app.enums;
 
-enum Marks {
+public enum Marks {
     GROUP(new String[]{"групп", "домашк"}),
     VISIT(new String[]{"посещени"}),
     MEETING(new String[]{"встреч"}),

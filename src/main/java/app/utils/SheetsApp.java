@@ -1,5 +1,6 @@
-package app;
+package app.utils;
 
+import app.ReportProcessor;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
@@ -19,7 +20,7 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 
-abstract public class GoogleSheetsApp {
+abstract public class SheetsApp {
     /** Application name. */
     private static final String APPLICATION_NAME =
             "Google Sheets API Java Quickstart";
@@ -64,7 +65,7 @@ abstract public class GoogleSheetsApp {
     public static Credential authorize() throws IOException {
         // Load client secrets.
         InputStream in =
-                GroupTablesParser.class.getResourceAsStream("/client_secret.json");
+                ReportProcessor.class.getResourceAsStream("/client_secret.json");
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 

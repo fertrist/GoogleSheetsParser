@@ -1,4 +1,4 @@
-package app;
+package app.enums;
 
 public enum Actions {
     GROUP_TOTAL, GROUP_WHITE, GROUP_NEW, GROUP_GUESTS, VISIT_WHITE, VISIT_NEW, MEETING_WHITE, MEETING_NEW, CALL;

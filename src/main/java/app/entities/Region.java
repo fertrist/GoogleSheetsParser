@@ -1,4 +1,6 @@
-package app;
+package app.entities;
+
+import app.enums.Category;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -7,12 +9,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class RegionData {
+public class Region {
 
     private String leader;
     private List<Map<String, List<Week>>> groups;
 
-    public RegionData(String leader) {
+    public Region(String leader) {
         this.leader = leader;
         groups = new ArrayList<>();
     }

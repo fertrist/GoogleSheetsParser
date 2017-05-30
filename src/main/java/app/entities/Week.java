@@ -1,4 +1,7 @@
-package app;
+package app.entities;
+
+import app.enums.Category;
+import app.enums.Marks;
 
 import java.util.ArrayList;
 import java.util.List;

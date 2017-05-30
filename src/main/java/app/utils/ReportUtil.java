@@ -1,5 +1,7 @@
-package app;
+package app.utils;
 
+import app.entities.Person;
+import app.enums.Marks;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;
@@ -11,7 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class Util {
+public class ReportUtil {
 
     private enum Month {
         JAN("январь"), FEB("февраль"), MAR("март"),
@@ -208,11 +210,25 @@ public class Util {
         return month;
     }
 
-    static int findMonthForColumn(Map<String, List<Integer>> map, int c) {
+    public static int findMonthForColumn(Map<String, List<Integer>> map, int c) {
         String month = null;
         for (Map.Entry<String, List<Integer>> entry : map.entrySet()) {
             if (entry.getValue().contains(c)) month = entry.getKey();
         }
         return getMonthNumber(month);
+    }
+
+    /**
+     * By cell background get kind of action (meeting, visit, call)
+     * @param color cell background
+     * @param colors color legend
+     */
+    public static Marks getActionByColor(Color color, Map<Marks, Color> colors) {
+        for (Map.Entry<Marks, Color> e : colors.entrySet()) {
+            if (areColorsEqual(e.getValue(), color)) {
+                return e.getKey();
+            }
+        }
+        return null;
     }
 }
