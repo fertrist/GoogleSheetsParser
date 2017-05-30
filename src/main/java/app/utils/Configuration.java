@@ -12,7 +12,7 @@ import java.util.Properties;
 public class Configuration {
 
     public static final String REPORT_SPREADSHEET_URL = "report.spreadsheet.url";
-    public static final String REGION_COUNT = "report.region.count";
+    public static final String REGIONS = "report.regions";
     public static final String REPORT_START_DATE = "report.start.date";
     public static final String REPORT_END_DATE = "report.end.date";
     public static final String REPORT_TITLE = "report.title";
@@ -29,7 +29,7 @@ public class Configuration {
     public static final String PEOPLE_COLUMN = "people.column";
     public static final String GROUPS = "groups";
 
-    private static final String REGION_PREFIX = "region%d.";
+    private static final String REGION_PREFIX = "region%s.";
     private static final String GROUP_PREFIX = "group%d.";
     private static final String CONFIGURATION_FILE = "CONFIGURATION_FILE";
 
@@ -127,7 +127,7 @@ public class Configuration {
         return properties.getProperty(String.format(GROUP_PREFIX, groupNo) + property);
     }
 
-    public static String getRegionProperty(String property, int regionNo) {
+    public static String getRegionProperty(String property, String regionNo) {
         return properties.getProperty(String.format(REGION_PREFIX, regionNo) + property);
     }
 

@@ -34,15 +34,15 @@ public class ReportProcessor extends SheetsApp {
     public static void main(String[] args) throws IOException {
         Sheets service = getSheetsService();
 
-        int regionCount = Integer.valueOf(getProperty(REGION_COUNT));
+        String[] regionNumbers = getProperty(REGIONS).split(",");
         List<Region> regions = new ArrayList<>();
-        for (int i = 1; i <= regionCount; i++) {
-            regions.add(processRegion(service, i));
+        for (String regionNumber : regionNumbers){
+            regions.add(processRegion(service, regionNumber));
         }
         report(service, regions);
     }
 
-    private static Region processRegion(Sheets service, int regionNo) throws IOException {
+    private static Region processRegion(Sheets service, String regionNo) throws IOException {
         String regionLeader = getRegionProperty(LEADER, regionNo);
         System.out.println("Processing " + regionLeader + "'s region.");
 
@@ -107,11 +107,13 @@ public class ReportProcessor extends SheetsApp {
             }
             CellData cellData = r.getValues().get(0);
             CellFormat effectiveFormat = cellData.getEffectiveFormat();
-            if (!effectiveFormat.getTextFormat().getBold() && cellData.getEffectiveValue() != null) {
+            if (!effectiveFormat.getTextFormat().getUnderline() && cellData.getEffectiveValue() != null) {
+                String value = cellData.getEffectiveValue().getStringValue();
                 Category category;
                 if (isWhite(effectiveFormat.getBackgroundColor())) {
                     category = Category.WHITE;
-                } else if (isGrey(effectiveFormat.getBackgroundColor())) {
+                } else if (isGrey(effectiveFormat.getBackgroundColor())
+                        || value.toLowerCase().contains("(и.с") || value.toLowerCase().contains("(исп.срок)")) {
                     category = Category.GUEST;
                 } else {
                     category = Category.NEW;

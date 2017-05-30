@@ -109,7 +109,7 @@ public class ReportUtil {
     }
 
     public static boolean isGrey(Color color) {
-        return color.getBlue().equals(color.getGreen()) && color.getGreen().equals(color.getRed());
+        return !isWhite(color) && color.getBlue().equals(color.getGreen()) && color.getGreen().equals(color.getRed());
     }
 
     public static String columnToLetter(int column) {
