@@ -19,6 +19,10 @@ public class Configuration {
     public static final String PREVIOUS_WHITE_COUNT = "previous.white.count";
     public static final String PREVIOUS_NEW_COUNT = "previous.new.count";
 
+    public static final String DEFAULT_ROW_WITH_MONTHS = "default.row.with.months";
+    public static final String DEFAULT_GROUP_DAY = "default.group.day";
+    public static final String DEFAULT_PEOPLE_COLUMN = "default.people.column";
+
     public static final String SPREADSHEET_URL = "spreadsheet.url";
     public static final String LEADER = "leader.name";
     public static final String ROW_WITH_MONTHS = "row.with.months";
@@ -34,9 +38,6 @@ public class Configuration {
     private static final String CONFIGURATION_FILE = "CONFIGURATION_FILE";
 
     private static String reportSpreadSheetId;
-    private static String previousWhiteCount;
-    private static String previousNewCount;
-
     private static int reportStartDay;
     private static String reportStartMonth;
     private static String reportStartDate;
@@ -111,15 +112,35 @@ public class Configuration {
     }
 
     public static Group buildGroup(int groupNo) {
-        return Group.builder().groupNumber(groupNo)
-                .spreadSheetId(getSpreadsheetId(getGroupProperty(SPREADSHEET_URL, groupNo)))
-                .leaderName(getGroupProperty(LEADER, groupNo))
-                .groupDay(getGroupProperty(GROUP_DAY, groupNo))
-                .monthsRow(getGroupProperty(ROW_WITH_MONTHS, groupNo))
-                .markingRow(getGroupProperty(COLORS_ROW, groupNo))
-                .dataStartRow(getGroupProperty(DATA_FIRST_ROW, groupNo))
-                .dataEndRow(getGroupProperty(DATA_LAST_ROW, groupNo))
-                .peopleColumn(getGroupProperty(PEOPLE_COLUMN, groupNo))
+        String spreadsheetId = getSpreadsheetId(getGroupProperty(SPREADSHEET_URL, groupNo));
+        String leaderName = getGroupProperty(LEADER, groupNo);
+        String groupDay = getGroupProperty(GROUP_DAY, groupNo);
+        groupDay = groupDay == null ? getProperty(DEFAULT_GROUP_DAY) : groupDay;
+
+        String rowWithMonths = getGroupProperty(ROW_WITH_MONTHS, groupNo);
+        rowWithMonths = rowWithMonths == null ? getProperty(DEFAULT_ROW_WITH_MONTHS) : rowWithMonths;
+
+        String peopleColumn = getGroupProperty(PEOPLE_COLUMN, groupNo);
+        peopleColumn = peopleColumn == null ? getProperty(DEFAULT_PEOPLE_COLUMN) : peopleColumn;
+
+        String dataFirstRow = getGroupProperty(DATA_FIRST_ROW, groupNo);
+        dataFirstRow = dataFirstRow != null ? dataFirstRow
+                : String.valueOf(Integer.valueOf(rowWithMonths) + 2);
+
+        String dataLastRow = getGroupProperty(DATA_LAST_ROW, groupNo);
+
+        String colorsRow = getGroupProperty(COLORS_ROW, groupNo);
+        colorsRow = colorsRow != null ? colorsRow
+                : String.valueOf(Integer.valueOf(dataLastRow) + 2);
+
+        return Group.builder().groupNumber(groupNo).spreadSheetId(spreadsheetId)
+                .leaderName(leaderName)
+                .groupDay(groupDay)
+                .monthsRow(rowWithMonths)
+                .peopleColumn(peopleColumn)
+                .dataStartRow(dataFirstRow)
+                .dataEndRow(dataLastRow)
+                .markingRow(colorsRow)
                 .build();
     }
 
@@ -178,11 +199,4 @@ public class Configuration {
         Configuration.reportStartDate = reportStartDate;
     }
 
-    public static String getPreviousWhiteCount() {
-        return previousWhiteCount;
-    }
-
-    public static String getPreviousNewCount() {
-        return previousNewCount;
-    }
 }

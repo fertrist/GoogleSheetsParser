@@ -60,7 +60,8 @@ public class ReportProcessor extends SheetsApp {
         Region region = new Region(regionLeader);
         for (Group group : groups) {
             Map<String, List<Week>> groupData = new HashMap<>();
-            groupData.put(group.getLeaderName(), processGroup(service, group));
+            List<Week> weeks = processGroup(service, group);
+            groupData.put(group.getLeaderName(), weeks);
             region.getGroups().add(groupData);
         }
         return region;
