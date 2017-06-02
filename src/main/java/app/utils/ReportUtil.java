@@ -231,4 +231,15 @@ public class ReportUtil {
         }
         return null;
     }
+
+    public static boolean containsIgnoreCase(List<String> names, String name) {
+        if (name.contains(name)) {
+            return true;
+        }
+        name = name.replaceAll("\\s+", " ").replaceAll("\\(.*\\)|\\d", "").trim();
+        for (String n : names) {
+            if (n.equalsIgnoreCase(name)) return true;
+        }
+        return false;
+    }
 }

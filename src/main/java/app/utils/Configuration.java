@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 public class Configuration {
@@ -31,6 +33,8 @@ public class Configuration {
     public static final String DATA_FIRST_ROW = "data.first.row";
     public static final String DATA_LAST_ROW = "data.last.row";
     public static final String PEOPLE_COLUMN = "people.column";
+    public static final String ADDED_PEOPLE = "added.people";
+    public static final String REMOVED_PEOPLE = "removed.people";
     public static final String GROUPS = "groups";
 
     private static final String REGION_PREFIX = "region%s.";
@@ -133,6 +137,9 @@ public class Configuration {
         colorsRow = colorsRow != null ? colorsRow
                 : String.valueOf(Integer.valueOf(dataLastRow) + 2);
 
+        List<String> addedPeople = Arrays.asList(getGroupProperty(ADDED_PEOPLE, groupNo).split(","));
+        List<String> removedPeople = Arrays.asList(getGroupProperty(REMOVED_PEOPLE, groupNo).split(","));
+
         return Group.builder().groupNumber(groupNo).spreadSheetId(spreadsheetId)
                 .leaderName(leaderName)
                 .groupDay(groupDay)
@@ -141,10 +148,12 @@ public class Configuration {
                 .dataStartRow(dataFirstRow)
                 .dataEndRow(dataLastRow)
                 .markingRow(colorsRow)
+                .addedPeople(addedPeople)
+                .removedPeople(removedPeople)
                 .build();
     }
 
-    private static String getGroupProperty(String property, int groupNo) {
+    public static String getGroupProperty(String property, int groupNo) {
         return properties.getProperty(String.format(GROUP_PREFIX, groupNo) + property);
     }
 

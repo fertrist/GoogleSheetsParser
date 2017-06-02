@@ -2,6 +2,8 @@ package app.entities;
 
 import com.google.common.base.Objects;
 
+import java.util.List;
+
 public class Group {
 
     private int groupNumber;
@@ -13,6 +15,8 @@ public class Group {
     private String dataFirstRow;
     private String dataLastRow;
     private String peopleColumn;
+    private List<String> addedPeople;
+    private List<String> removedPeople;
 
     public Group(Builder builder) {
         this.groupNumber = builder.groupNumber;
@@ -24,6 +28,8 @@ public class Group {
         this.dataFirstRow = builder.dataFirstRow;
         this.dataLastRow = builder.dataLastRow;
         this.peopleColumn = builder.peopleColumn;
+        this.addedPeople = builder.addedPeople;
+        this.removedPeople= builder.removedPeople;
     }
 
     public static Builder builder() { return new Builder(); }
@@ -39,6 +45,8 @@ public class Group {
         private String dataFirstRow;
         private String dataLastRow;
         private String peopleColumn;
+        private List<String> addedPeople;
+        private List<String> removedPeople;
 
         public Builder groupNumber(int groupNumber) {
             this.groupNumber = groupNumber;
@@ -85,6 +93,16 @@ public class Group {
             return this;
         }
 
+        public Builder addedPeople(List<String> addedPeople) {
+            this.addedPeople = addedPeople;
+            return this;
+        }
+
+        public Builder removedPeople(List<String> removedPeople) {
+            this.removedPeople = removedPeople;
+            return this;
+        }
+
         public Group build() {
             return new Group(this);
         }
@@ -124,6 +142,58 @@ public class Group {
 
     public String getPeopleColumn() {
         return peopleColumn;
+    }
+
+    public void setGroupNumber(int groupNumber) {
+        this.groupNumber = groupNumber;
+    }
+
+    public void setSpreadSheetId(String spreadSheetId) {
+        this.spreadSheetId = spreadSheetId;
+    }
+
+    public void setLeaderName(String leaderName) {
+        this.leaderName = leaderName;
+    }
+
+    public void setRowWithMonths(String rowWithMonths) {
+        this.rowWithMonths = rowWithMonths;
+    }
+
+    public void setGroupDay(String groupDay) {
+        this.groupDay = groupDay;
+    }
+
+    public void setColorsRow(String colorsRow) {
+        this.colorsRow = colorsRow;
+    }
+
+    public void setDataFirstRow(String dataFirstRow) {
+        this.dataFirstRow = dataFirstRow;
+    }
+
+    public void setDataLastRow(String dataLastRow) {
+        this.dataLastRow = dataLastRow;
+    }
+
+    public void setPeopleColumn(String peopleColumn) {
+        this.peopleColumn = peopleColumn;
+    }
+
+    public List<String> getAddedPeople() {
+        return addedPeople;
+    }
+
+    public void setAddedPeople(List<String> addedPeople) {
+        this.addedPeople = addedPeople;
+    }
+
+    public List<String> getRemovedPeople() {
+        return removedPeople;
+    }
+
+    public void setRemovedPeople(List<String> removedPeople) {
+        this.removedPeople = removedPeople;
     }
 
     @Override
