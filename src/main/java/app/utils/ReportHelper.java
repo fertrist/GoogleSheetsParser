@@ -41,7 +41,7 @@ import static app.utils.ReportUtil.listToNote;
 public class ReportHelper {
 
     private static String [] REPORT_COLUMNS = new String[]{"Лидер", "Неделя", "По списку", "Было всего", "Белый список", "Гости", "Новые люди",
-            "Как прошла гр.(%)", "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки"};
+            "Как прошла (%)", "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки"};
     public static final Color YELLOW = getColor(255, 214, 93);
     public static final Color BLUE = getColor(147, 176, 255);
     public static final Color GREY = getColor(134, 133, 135);
@@ -155,7 +155,9 @@ public class ReportHelper {
         CellData presentGuests = getCell(week.getPresentByCategory(Category.GUEST).size(), listToNote(week.getPresentByCategory(Category.GUEST)));
         CellData presentNew = getCell(week.getPresentByCategory(Category.NEW).size(), listToNote(week.getPresentByCategory(Category.NEW)));
         newPeople.addAll(week.getPresentByCategory(Category.NEW).stream().map(Person::getName).collect(Collectors.toSet()));
-        CellData groupRate = getCellWithValue("-||-");
+        CellData groupRate = getCellWithValue(
+                week.getPercents() != null ? week.getPercents() : "-");
+        groupRate.setNote(week.getGroupComments());
         CellData visitsWhite = getCellWithValue(week.getVisitWhite());
         CellData meetingsWhite = getCellWithValue(week.getMeetingWhite());
         CellData visitsNew = getCellWithValue(week.getVisitNew());

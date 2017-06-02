@@ -18,6 +18,8 @@ public class Week {
     private int calls = 0;
     private String start;
     private String end;
+    private String percents;
+    private String groupComments;
 
     private List<Person> whiteList = new ArrayList<>();
     private List<Person> present = new ArrayList<>();
@@ -198,18 +200,28 @@ public class Week {
         this.end = String.format("%02d.%02d", day, month);
     }
 
-    @Override
-    public String toString() {
-        return "Week{" +
-                "leader='" + leader + '\'' +
-                ", weekNumber=" + weekNumber +
-                ", meetingNew=" + meetingNew +
-                ", meetingWhite=" + meetingWhite +
-                ", visitNew=" + visitNew +
-                ", visitWhite=" + visitWhite +
-                ", calls=" + calls +
-                ", whiteList=" + whiteList +
-                ", present=" + present +
-                '}';
+    public void setStart(String start) {
+        this.start = start;
     }
+
+    public void setEnd(String end) {
+        this.end = end;
+    }
+
+    public String getPercents() {
+        return percents;
+    }
+
+    public void setPercents(String percents) {
+        this.percents = percents;
+    }
+
+    public String getGroupComments() {
+        return groupComments;
+    }
+
+    public void setGroupComments(String groupComments) {
+        this.groupComments = groupComments;
+    }
+
 }

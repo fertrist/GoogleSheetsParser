@@ -176,6 +176,7 @@ public class ReportProcessor extends SheetsApp {
 
             // parse week for each guy
             int dayIndex = 0;
+            int groupDayIndex = 0;
             for (Person person : people) {
                 dayIndex = weekIndex - 1;
                 RowData personRow = dataRows.get(dataFirstRow + person.getIndex());
@@ -185,19 +186,40 @@ public class ReportProcessor extends SheetsApp {
                     dayIndex++;
                     weekDay = daysCells.get(dayIndex).getEffectiveValue().getStringValue();
                     CellData cell = monthCells.get(dayIndex);
-                    if (cell.getEffectiveFormat() == null || cell.getEffectiveFormat().getBackgroundColor() == null) continue;
-                    if (weekDay.equalsIgnoreCase(groupWeekDay)) {
-                        boolean wasPresentOnGroup = areColorsEqual(cell.getEffectiveFormat().getBackgroundColor(), colors.get(Marks.GROUP));
-                        if (wasPresentOnGroup) {
-                            week.addPresent(person);
-                        }
+                    if (cell.getEffectiveFormat() == null
+                            || cell.getEffectiveFormat().getBackgroundColor() == null){
+                        continue;
                     }
                     Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
+
+                    if (weekDay.equalsIgnoreCase(groupWeekDay)) {
+                        boolean wasPresentOnGroup = areColorsEqual(bgColor, colors.get(Marks.GROUP));
+                        if (wasPresentOnGroup) {
+                            week.addPresent(person);
+                            if (groupDayIndex == 0) {
+                                groupDayIndex = dayIndex;
+                            }
+                            continue;
+                        }
+                    }
                     Marks action = getActionByColor(bgColor, colors);
                     if (action != null) {
                         week.mergeAction(action, person.getCategory());
                     }
                 } while (!weekDay.equalsIgnoreCase("вс") && dayIndex < (monthCells.size() - 1));
+            }
+            String groupNote = daysCells.get(groupDayIndex).getNote();
+            groupNote = groupNote != null ? groupNote : daysCells.get(groupDayIndex).getNote();
+            if (groupNote != null && !groupNote.isEmpty()) {
+                String firstString = groupNote.split("\\n")[0];
+                if (firstString.matches("[0-9]+[%]")) {
+                    week.setPercents(firstString);
+                    String comment = groupNote
+                            .substring(groupNote.indexOf(firstString), groupNote.length());
+                    week.setGroupComments(comment.trim());
+                } else {
+                    week.setGroupComments(groupNote);
+                }
             }
             weekIndex += (dayIndex - weekIndex);
             monthNumber = findMonthForColumn(columnToMonthMap, weekIndex);
