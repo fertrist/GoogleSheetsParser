@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+
+import static app.utils.ReportUtil.isEmpty;
 
 public class Configuration {
 
@@ -137,8 +140,13 @@ public class Configuration {
         colorsRow = colorsRow != null ? colorsRow
                 : String.valueOf(Integer.valueOf(dataLastRow) + 2);
 
-        List<String> addedPeople = Arrays.asList(getGroupProperty(ADDED_PEOPLE, groupNo).split(","));
-        List<String> removedPeople = Arrays.asList(getGroupProperty(REMOVED_PEOPLE, groupNo).split(","));
+        String addedPeopleStr = getGroupProperty(ADDED_PEOPLE, groupNo);
+        String removedPeopleStr = getGroupProperty(REMOVED_PEOPLE, groupNo);
+
+        List<String> addedPeople = isEmpty(addedPeopleStr) ? new ArrayList<>()
+                : Arrays.asList(addedPeopleStr.split(","));
+        List<String> removedPeople = isEmpty(removedPeopleStr) ? new ArrayList<>()
+                : Arrays.asList(removedPeopleStr.split(","));
 
         return Group.builder().groupNumber(groupNo).spreadSheetId(spreadsheetId)
                 .leaderName(leaderName)

@@ -1,7 +1,7 @@
 package app.utils;
 
 import app.entities.Person;
-import app.enums.Marks;
+import app.enums.Actions;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;
@@ -223,8 +223,8 @@ public class ReportUtil {
      * @param color cell background
      * @param colors color legend
      */
-    public static Marks getActionByColor(Color color, Map<Marks, Color> colors) {
-        for (Map.Entry<Marks, Color> e : colors.entrySet()) {
+    public static Actions getActionByColor(Color color, Map<Actions, Color> colors) {
+        for (Map.Entry<Actions, Color> e : colors.entrySet()) {
             if (areColorsEqual(e.getValue(), color)) {
                 return e.getKey();
             }
@@ -233,7 +233,7 @@ public class ReportUtil {
     }
 
     public static boolean containsIgnoreCase(List<String> names, String name) {
-        if (name.contains(name)) {
+        if (names.contains(name)) {
             return true;
         }
         name = name.replaceAll("\\s+", " ").replaceAll("\\(.*\\)|\\d", "").trim();
@@ -241,5 +241,9 @@ public class ReportUtil {
             if (n.equalsIgnoreCase(name)) return true;
         }
         return false;
+    }
+
+    public static boolean isEmpty(String s) {
+        return s == null || s.length() == 0 || s.trim().length() == 0;
     }
 }

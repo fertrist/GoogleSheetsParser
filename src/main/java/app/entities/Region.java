@@ -2,21 +2,17 @@ package app.entities;
 
 import app.enums.Category;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Region {
 
     private String leader;
-    private List<Map<String, List<Week>>> groups;
+    private Map<Group, List<Week>> groups;
 
     public Region(String leader) {
         this.leader = leader;
-        groups = new ArrayList<>();
+        groups = new TreeMap<>();
     }
 
     public String getLeader() {
@@ -27,19 +23,18 @@ public class Region {
         this.leader = leader;
     }
 
-    public List<Map<String, List<Week>>> getGroups() {
+    public Map<Group, List<Week>> getGroups() {
         return groups;
     }
 
-    public void setGroups(List<Map<String, List<Week>>> groups) {
+    public void setGroups(Map<Group, List<Week>> groups) {
         this.groups = groups;
     }
 
     public int getTotalNewCount() {
         List<String> list = new ArrayList<>();
-        for (Map<String, List<Week>> group : groups) {
+        for (Map.Entry<Group, List<Week>> entry : groups.entrySet()) {
             Set<String> innerSet = new HashSet<>();
-            Map.Entry<String, List<Week>> entry = group.entrySet().iterator().next();
             for (Week week : entry.getValue()) {
                 innerSet.addAll(week.getPresentByCategory(Category.NEW).stream().map(Person::getName).collect(Collectors.toSet()));
             }
@@ -50,8 +45,7 @@ public class Region {
 
     public int getTotalWhiteCount() {
         int whiteCount = 0;
-        for (Map<String, List<Week>> group : groups) {
-            Map.Entry<String, List<Week>> entry = group.entrySet().iterator().next();
+        for (Map.Entry<Group, List<Week>> entry : groups.entrySet()) {
             whiteCount += entry.getValue().get(entry.getValue().size()-1).getWhiteList().size();
         }
         return whiteCount;

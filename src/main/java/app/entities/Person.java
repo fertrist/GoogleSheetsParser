@@ -2,7 +2,7 @@ package app.entities;
 
 import app.enums.Category;
 
-public class Person {
+public class Person implements Cloneable {
 
     private String name;
     private Category category;
@@ -57,6 +57,10 @@ public class Person {
         result = 31 * result + (category != null ? category.hashCode() : 0);
         result = 31 * result + index;
         return result;
+    }
+
+    public Person clone() {
+        return new Person(this.category, this.getName(), this.getIndex());
     }
 
     @Override

@@ -1,7 +1,7 @@
 package app.entities;
 
 import app.enums.Category;
-import app.enums.Marks;
+import app.enums.Actions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,23 +41,23 @@ public class Week {
         this.present.add(person);
     }
 
-    public void mergeAction(Marks action, Category category) {
+    public void mergeAction(Actions action, Category category) {
         if (category == Category.WHITE || category == Category.GUEST) {
-            if (action == Marks.MEETING) {
+            if (action == Actions.MEETING) {
                 increaseMeetingWhite();
             }
-            if (action == Marks.VISIT) {
+            if (action == Actions.VISIT) {
                 increaseVisitWhite();
             }
         }
         if (category == Category.NEW) {
-            if (action == Marks.MEETING) {
+            if (action == Actions.MEETING) {
                 increaseMeetingNew();
             }
-            if (action == Marks.VISIT) {
+            if (action == Actions.VISIT) {
                 increaseVisitNew();
             }
-            if (action == Marks.CALL) {
+            if (action == Actions.CALL) {
                 increaseCalls();
             }
         }

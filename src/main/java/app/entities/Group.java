@@ -4,7 +4,7 @@ import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class Group {
+public class Group implements Comparable<Group> {
 
     private int groupNumber;
     private String spreadSheetId;
@@ -33,6 +33,11 @@ public class Group {
     }
 
     public static Builder builder() { return new Builder(); }
+
+    @Override
+    public int compareTo(Group o) {
+        return this.leaderName.compareTo(o.leaderName);
+    }
 
     public static class Builder {
 

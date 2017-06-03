@@ -5,7 +5,7 @@ import app.entities.Person;
 import app.entities.Region;
 import app.entities.Week;
 import app.enums.Category;
-import app.enums.Marks;
+import app.enums.Actions;
 import app.utils.Configuration;
 import app.utils.SheetsApp;
 import com.google.api.services.sheets.v4.model.*;
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static app.enums.Actions.GROUP;
 import static app.utils.Configuration.*;
 import static app.utils.ReportUtil.*;
 import static app.utils.Configuration.getProperty;
@@ -59,10 +60,9 @@ public class ReportProcessor extends SheetsApp {
         // loop through groups, collect and print data
         Region region = new Region(regionLeader);
         for (Group group : groups) {
-            Map<String, List<Week>> groupData = new HashMap<>();
+            Map<Group, List<Week>> groupData = new HashMap<>();
             List<Week> weeks = processGroup(service, group);
-            groupData.put(group.getLeaderName(), weeks);
-            region.getGroups().add(groupData);
+            region.getGroups().put(group, weeks);
         }
         return region;
     }
@@ -85,7 +85,7 @@ public class ReportProcessor extends SheetsApp {
         System.out.printf("roughColumnsRange : [%d : %d] %n", roughColumnsRange.getKey(), roughColumnsRange.getValue());
         System.out.printf("roughColumnsRange : [%s : %s] %n", columnToLetter(roughColumnsRange.getKey()), columnToLetter(roughColumnsRange.getValue()));
 
-        Map<Marks, Color> colors = parseColors(sheet.getData().get(1));
+        Map<Actions, Color> colors = parseColors(sheet.getData().get(1));
         List<Person> people = parsePeople(sheet.getData().get(2), group);
 
         //TODO get week columns and parse by rows by colored lists
@@ -141,9 +141,8 @@ public class ReportProcessor extends SheetsApp {
      * Retrieves people by categories
      */
     private static List<Week> processAllWeeks(
-            List<RowData> dataRows, Group group, List<Person> people, Map<Marks, Color> colors)
+            List<RowData> dataRows, Group group, List<Person> people, Map<Actions, Color> colors)
     {
-
         int dataFirstRow = Integer.valueOf(group.getDataFirstRow());
         int groupDay = Integer.valueOf(group.getGroupDay());
 
@@ -195,9 +194,12 @@ public class ReportProcessor extends SheetsApp {
 
         String groupWeekDay = getWeekDay(groupDay);
         List<Week> weeks = new ArrayList<>();
-        for (int weekIndex = startColumn; weekIndex <= endColumn; weekIndex++) {
+        Map<Week, List<Pair<Person, Actions>>> weekActionsMap = new HashMap<>();
+
+        for (int weekIndex = startColumn; weekIndex <= endColumn; weekIndex++)
+        {
             Week week = new Week();
-            week.setWhiteList(whiteList);
+            week.getWhiteList().addAll(whiteList);
             int monthNumber = findMonthForColumn(columnToMonthMap, weekIndex);
             int dayNumber = datesCells.get(weekIndex).getEffectiveValue().getNumberValue().intValue();
             week.setStart(monthNumber, dayNumber);
@@ -205,6 +207,8 @@ public class ReportProcessor extends SheetsApp {
             // parse week for each guy
             int dayIndex = 0;
             int groupDayIndex = 0;
+
+            List<Pair<Person, Actions>> actionsList = new ArrayList<>();
             for (Person person : people) {
                 dayIndex = weekIndex - 1;
                 RowData personRow = dataRows.get(dataFirstRow + person.getIndex());
@@ -221,34 +225,29 @@ public class ReportProcessor extends SheetsApp {
                     Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
 
                     if (weekDay.equalsIgnoreCase(groupWeekDay)) {
-                        boolean wasPresentOnGroup = areColorsEqual(bgColor, colors.get(Marks.GROUP));
+                        boolean wasPresentOnGroup = areColorsEqual(bgColor, colors.get(GROUP));
                         if (wasPresentOnGroup) {
-                            week.addPresent(person);
+                            actionsList.add(new Pair<>(person.clone(), GROUP));
+                            //week.addPresent(person);
                             if (groupDayIndex == 0) {
                                 groupDayIndex = dayIndex;
                             }
                             continue;
                         }
                     }
-                    Marks action = getActionByColor(bgColor, colors);
+                    Actions action = getActionByColor(bgColor, colors);
+
                     if (action != null) {
-                        week.mergeAction(action, person.getCategory());
+                        //week.mergeAction(action, person.getCategory());
+                        actionsList.add(new Pair<>(person.clone(), action));
                     }
                 } while (!weekDay.equalsIgnoreCase("вс") && dayIndex < (monthCells.size() - 1));
             }
-            String groupNote = daysCells.get(groupDayIndex).getNote();
-            groupNote = groupNote != null ? groupNote : daysCells.get(groupDayIndex).getNote();
-            if (groupNote != null && !groupNote.isEmpty()) {
-                String firstString = groupNote.split("\\n")[0];
-                if (firstString.matches("[0-9]+[%]")) {
-                    week.setPercents(firstString);
-                    String comment = groupNote
-                            .substring(groupNote.indexOf(firstString), groupNote.length());
-                    week.setGroupComments(comment.trim());
-                } else {
-                    week.setGroupComments(groupNote);
-                }
-            }
+
+            weekActionsMap.put(week, actionsList);
+
+            setGroupComments(week, daysCells.get(groupDayIndex), datesCells.get(groupDayIndex));
+
             weekIndex += (dayIndex - weekIndex);
             monthNumber = findMonthForColumn(columnToMonthMap, weekIndex);
             dayNumber = datesCells.get(weekIndex).getEffectiveValue().getNumberValue().intValue();
@@ -256,11 +255,58 @@ public class ReportProcessor extends SheetsApp {
             weeks.add(week);
         }
 
-        Week lastWeek = weeks.get(weeks.size()-1);
-        group.getAddedPeople();
-        group.getRemovedPeople();
+        // merge actions
+        int lastIndex = weeks.size() - 1;
+        for (int i = 0; i <= lastIndex; i++) {
+            Week week = weeks.get(i);
+            List<Pair<Person, Actions>> actions = weekActionsMap.get(week);
+            for (Pair<Person, Actions> action : actions) {
+                Person person = action.getKey();
+                if (i == lastIndex && containsIgnoreCase(group.getAddedPeople(), person.getName())) {
+                    person.setCategory(Category.WHITE);
+                }
+                if (i == lastIndex && containsIgnoreCase(group.getRemovedPeople(), person.getName())) {
+                    person.setCategory(Category.NEW);
+                }
+
+                if (action.getValue() == GROUP) {
+                    week.addPresent(person);
+                } else {
+                    week.mergeAction(action.getValue(), person.getCategory());
+                }
+            }
+            if (i == lastIndex) {
+                for (Person person : people) {
+                    Person updated = person.clone();
+                    if (containsIgnoreCase(group.getAddedPeople(), person.getName())) {
+                        updated.setCategory(Category.WHITE);
+                        week.getWhiteList().add(updated);
+                    }
+                    if (containsIgnoreCase(group.getRemovedPeople(), person.getName())) {
+                        updated.setCategory(Category.NEW);
+                        week.getWhiteList().remove(updated);
+                    }
+                }
+            }
+        }
 
         return weeks;
+    }
+
+    private static void setGroupComments(Week week, CellData dayCell, CellData dateCell) {
+        String groupNote = dayCell.getNote();
+        groupNote = groupNote != null ? groupNote : dateCell.getNote();
+        if (groupNote != null && !groupNote.isEmpty()) {
+            String firstString = groupNote.split("\\n")[0];
+            if (firstString.matches("[0-9]+[%]")) {
+                week.setPercents(firstString);
+                String comment = groupNote
+                        .substring(groupNote.indexOf(firstString), groupNote.length());
+                week.setGroupComments(comment.trim());
+            } else {
+                week.setGroupComments(groupNote);
+            }
+        }
     }
 
     /**
@@ -416,11 +462,9 @@ public class ReportProcessor extends SheetsApp {
                 new BatchUpdateSpreadsheetRequest().setRequests(requests);
         service.spreadsheets().batchUpdate(getReportSpreadSheetId(), body).execute();
 
-        for (Map<String, List<Week>> group : region.getGroups()) {
-            Map.Entry<String, List<Week>> groupEntry = group.entrySet().iterator().next();
-            String groupLeader = groupEntry.getKey();
+        for (Map.Entry<Group, List<Week>> groupEntry : region.getGroups().entrySet()) {
             List<Week> groupWeeks = groupEntry.getValue();
-            reportWeeks(service, groupLeader, groupWeeks, rowPointer.getValue());
+            reportWeeks(service, groupEntry.getKey(), groupWeeks, rowPointer.getValue());
             rowPointer.setValue(rowPointer.getValue() + groupWeeks.size() + 1);
         }
     }

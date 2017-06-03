@@ -1,9 +1,10 @@
 package app.utils;
 
+import app.entities.Group;
 import app.entities.Person;
 import app.entities.Week;
 import app.enums.Category;
-import app.enums.Marks;
+import app.enums.Actions;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
 import com.google.api.services.sheets.v4.model.CellData;
@@ -119,8 +120,8 @@ public class ReportHelper {
         return REPORT_COLUMNS;
     }
 
-    public static Map<Marks, Color> parseColors(GridData gridData) {
-        Map<Marks, Color> colors = new HashMap<>();
+    public static Map<Actions, Color> parseColors(GridData gridData) {
+        Map<Actions, Color> colors = new HashMap<>();
         for (RowData r : gridData.getRowData()) {
             if (r == null || r.getValues() == null) {
                 continue;
@@ -132,7 +133,7 @@ public class ReportHelper {
                 continue;
             }
             Color backgroundColor = colorCell.getEffectiveFormat().getBackgroundColor();
-            Marks mark = Marks.getEnumFor(nameCell.getEffectiveValue().getStringValue());
+            Actions mark = Actions.getEnumFor(nameCell.getEffectiveValue().getStringValue());
             if (mark != null)
                 colors.putIfAbsent(mark, backgroundColor);
         }
@@ -141,16 +142,18 @@ public class ReportHelper {
 
     /**
      * @param week week to report
-     * @param groupLeader group leader
      * @param newPeople set of new people of current region (to collect summary)
      */
-    public static RowData getWeekRow(Week week, String groupLeader, Set<String> newPeople) {
+    public static RowData getWeekRow(Week week, Group group, Set<String> newPeople, boolean lastWeek) {
         RowData rowData = new RowData();
 
-        CellData leader = getCellWithValue(groupLeader);
+        CellData leader = getCellWithValue(group.getLeaderName());
         CellData weekName = getCellWithValue(week.getWeekName());
         CellData presentTotal = getCellWithValue(week.getTotalCount());
         CellData listWhite = getCellWithValue(week.getWhiteList().size());
+        if (lastWeek) {
+            listWhite.setNote(group.getAddedPeople().toString());
+        }
         CellData presentWhite = getCell(week.getPresentByCategory(Category.WHITE).size(), listToNote(week.getWhiteAbsent()));
         CellData presentGuests = getCell(week.getPresentByCategory(Category.GUEST).size(), listToNote(week.getPresentByCategory(Category.GUEST)));
         CellData presentNew = getCell(week.getPresentByCategory(Category.NEW).size(), listToNote(week.getPresentByCategory(Category.NEW)));
@@ -169,7 +172,7 @@ public class ReportHelper {
         return rowData;
     }
 
-    public static void reportWeeks(Sheets service, String groupLeader, List<Week> weeks, int row) throws IOException {
+    public static void reportWeeks(Sheets service, Group group, List<Week> weeks, int row) throws IOException {
         prettyPrintWeeks(weeks);
 
         List<Request> requests = new ArrayList<>();
@@ -188,9 +191,11 @@ public class ReportHelper {
 
         // set each row
         Set<String> uniqueNewPeople = new HashSet<>();
-        for (Week week : weeks) {
-            allRows.add(getWeekRow(week, groupLeader, uniqueNewPeople));
+        for (int i = 0; i <= weeks.size() - 2; i++) {
+            allRows.add(getWeekRow(weeks.get(i), group, uniqueNewPeople, false));
         }
+        allRows.add(getWeekRow(weeks.get(weeks.size() - 1), group, uniqueNewPeople, true));
+
         int lastWhiteCount = weeks.get(weeks.size() - 1).getWhiteList().size();
 
         //add footer
