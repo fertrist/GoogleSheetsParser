@@ -218,6 +218,14 @@ public class ReportUtil {
         return getMonthNumber(month);
     }
 
+    public static String findMonthForColumn(int c, Map<String, List<Integer>> map) {
+        String month = null;
+        for (Map.Entry<String, List<Integer>> entry : map.entrySet()) {
+            if (entry.getValue().contains(c)) month = entry.getKey();
+        }
+        return month;
+    }
+
     /**
      * By cell background get kind of action (meeting, visit, call)
      * @param color cell background

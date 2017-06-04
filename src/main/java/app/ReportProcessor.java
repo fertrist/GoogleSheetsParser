@@ -7,6 +7,7 @@ import app.entities.Week;
 import app.enums.Category;
 import app.enums.Actions;
 import app.utils.Configuration;
+import app.utils.ParseHelper;
 import app.utils.SheetsApp;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
@@ -21,6 +22,9 @@ import java.util.stream.Collectors;
 
 import static app.enums.Actions.GROUP;
 import static app.utils.Configuration.*;
+import static app.utils.ParseHelper.getColumnToMonthMap;
+import static app.utils.ParseHelper.parseColors;
+import static app.utils.ParseHelper.parsePeople;
 import static app.utils.ReportUtil.*;
 import static app.utils.Configuration.getProperty;
 import static app.utils.ReportHelper.*;
@@ -54,13 +58,9 @@ public class ReportProcessor extends SheetsApp {
                 .map(Configuration::buildGroup)
                 .collect(Collectors.toList());
 
-        //print group properties
-        groups.forEach(System.out::println);
-
         // loop through groups, collect and print data
         Region region = new Region(regionLeader);
         for (Group group : groups) {
-            Map<Group, List<Week>> groupData = new HashMap<>();
             List<Week> weeks = processGroup(service, group);
             region.getGroups().put(group, weeks);
         }
@@ -93,55 +93,26 @@ public class ReportProcessor extends SheetsApp {
         spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(singletonList(dataRange)).setIncludeGridData(true).execute();
 
         List<RowData> dataRows = spreadsheet.getSheets().get(0).getData().get(0).getRowData();
-        return processAllWeeks(dataRows, group, people, colors);
+
+        RowData monthsRow = dataRows.get(0);
+        List<CellData> monthsCells = monthsRow.getValues();
+        RowData datesRow = dataRows.get(2);
+        List<CellData> datesCells = datesRow.getValues();
+
+        Map<String, List<Integer>> columnToMonthMap = getColumnToMonthMap(monthsCells, datesCells);
+
+        Pair<Integer, Integer> startEndColumns = ParseHelper.getStartEndColumns(columnToMonthMap, datesCells);
+
+        return processAllWeeks(dataRows, columnToMonthMap, startEndColumns.getKey(),
+                startEndColumns.getValue(), group, people, colors);
     }
 
     /**
      * Retrieves people by categories
      */
-    private static List<Person> parsePeople(GridData peopleData, Group group) {
-        List<Person> people = new ArrayList<>();
-
-        for (int i = 0; i < peopleData.getRowData().size(); i++) {
-
-            RowData r = peopleData.getRowData().get(i);
-            if (r == null || r.getValues() == null)
-            {
-                continue;
-            }
-
-            CellData cellData = r.getValues().get(0);
-            CellFormat effectiveFormat = cellData.getEffectiveFormat();
-
-            if (!effectiveFormat.getTextFormat().getUnderline() && cellData.getEffectiveValue() != null) {
-
-                String name = cellData.getEffectiveValue().getStringValue();
-                Category category;
-                boolean isAdded = containsIgnoreCase(group.getAddedPeople(), name);
-                if (isWhite(effectiveFormat.getBackgroundColor()) && !isAdded)
-                {
-                    category = Category.WHITE;
-                }
-                else if (isGrey(effectiveFormat.getBackgroundColor())
-                        || name.toLowerCase().contains("(и.с") || name.toLowerCase().contains("(исп.срок)"))
-                {
-                    category = Category.GUEST;
-                }
-                else
-                {
-                    category = Category.NEW;
-                }
-                people.add(new Person(category, cellData.getEffectiveValue().getStringValue(), i));
-            }
-        }
-        return people;
-    }
-
-    /**
-     * Retrieves people by categories
-     */
-    private static List<Week> processAllWeeks(
-            List<RowData> dataRows, Group group, List<Person> people, Map<Actions, Color> colors)
+    private static List<Week> processAllWeeks(List<RowData> dataRows, Map<String, List<Integer>> columnToMonthMap,
+                                              int startColumn, int endColumn, Group group, List<Person> people,
+                                              Map<Actions, Color> colors)
     {
         int dataFirstRow = Integer.valueOf(group.getDataFirstRow());
         int groupDay = Integer.valueOf(group.getGroupDay());
@@ -149,48 +120,11 @@ public class ReportProcessor extends SheetsApp {
         dataFirstRow--; // offset because of indexing
         List<Person> whiteList = people.stream().filter(p -> p.getCategory() == Category.WHITE).collect(Collectors.toList());
 
-        // define exact start end
-        RowData monthsRow = dataRows.get(0);
-        List<CellData> monthsCells = monthsRow.getValues();
-
         RowData daysRow = dataRows.get(1);
         List<CellData> daysCells = daysRow.getValues();
 
         RowData datesRow = dataRows.get(2);
         List<CellData> datesCells = datesRow.getValues();
-
-        int startColumn = 0, endColumn = 0;
-        String month = "";
-
-        Map<String, List<Integer>> columnToMonthMap = new HashMap<>();
-        for (int i = 0; i < datesCells.size(); i++)
-        {
-            int monthIndex = Math.min(i, monthsCells.size() - 1);
-
-            String newMonth = getMonthFromString(monthsCells.get(monthIndex).getEffectiveValue() != null
-                    ? monthsCells.get(monthIndex).getEffectiveValue().getStringValue().toLowerCase() : month);
-
-            if (!newMonth.equals(month))
-            {
-                month = newMonth;
-                columnToMonthMap.put(month, new ArrayList<>());
-            }
-            columnToMonthMap.get(month).add(i);
-
-            Double day = datesCells.get(i).getEffectiveValue().getNumberValue();
-
-            if (month.equalsIgnoreCase(getReportStartMonth())
-                    && day.equals((double) getReportStartDay()))
-            {
-                startColumn = i;
-            }
-
-            if (month.equalsIgnoreCase(getReportEndMonth())
-                    && day.equals((double) getReportEndDay()))
-            {
-                endColumn = i;
-            }
-        }
 
         String groupWeekDay = getWeekDay(groupDay);
         List<Week> weeks = new ArrayList<>();
@@ -294,8 +228,10 @@ public class ReportProcessor extends SheetsApp {
     }
 
     private static void setGroupComments(Week week, CellData dayCell, CellData dateCell) {
+
         String groupNote = dayCell.getNote();
         groupNote = groupNote != null ? groupNote : dateCell.getNote();
+
         if (groupNote != null && !groupNote.isEmpty()) {
             String firstString = groupNote.split("\\n")[0];
             if (firstString.matches("[0-9]+[%]")) {
@@ -313,6 +249,7 @@ public class ReportProcessor extends SheetsApp {
      * Get raw, approximate, rough range of columns to work with (to avoid parsing old columns)
      */
     private static Pair<Integer, Integer> getApproximateColumnsRange(Sheet monthsSheet) {
+
         RowData monthsRow = monthsSheet.getData().get(0).getRowData().get(0);
         List<CellData> cellDatas = monthsRow.getValues();
         List<GridRange> merges = monthsSheet.getMerges();
@@ -361,13 +298,16 @@ public class ReportProcessor extends SheetsApp {
 
         MutableInteger rowPointer = new MutableInteger(0);
         rowPointer.setValue(rowPointer.getValue() + 2);
+
         int totalNewCount = 0;
         int totalWhiteCount = 0;
+
         for (Region region : regions) {
             printRegion(service, rowPointer, region);
             totalNewCount += region.getTotalNewCount();
             totalWhiteCount += region.getTotalWhiteCount();
         }
+
         // TODO add report main footer (current summary)
         UpdateCellsRequest updateFooterRequest = new UpdateCellsRequest();
         updateFooterRequest.setFields("*");

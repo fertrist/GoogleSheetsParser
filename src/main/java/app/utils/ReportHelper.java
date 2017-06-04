@@ -120,26 +120,6 @@ public class ReportHelper {
         return REPORT_COLUMNS;
     }
 
-    public static Map<Actions, Color> parseColors(GridData gridData) {
-        Map<Actions, Color> colors = new HashMap<>();
-        for (RowData r : gridData.getRowData()) {
-            if (r == null || r.getValues() == null) {
-                continue;
-            }
-            CellData colorCell = r.getValues().get(0);
-            CellData nameCell = r.getValues().get(1);
-            if (nameCell.getEffectiveValue() == null || colorCell.getEffectiveFormat() == null
-                    || colorCell.getEffectiveFormat().getBackgroundColor() == null) {
-                continue;
-            }
-            Color backgroundColor = colorCell.getEffectiveFormat().getBackgroundColor();
-            Actions mark = Actions.getEnumFor(nameCell.getEffectiveValue().getStringValue());
-            if (mark != null)
-                colors.putIfAbsent(mark, backgroundColor);
-        }
-        return colors;
-    }
-
     /**
      * @param week week to report
      * @param newPeople set of new people of current region (to collect summary)
