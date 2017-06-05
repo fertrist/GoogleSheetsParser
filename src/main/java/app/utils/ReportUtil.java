@@ -8,6 +8,7 @@ import com.google.api.services.sheets.v4.model.Color;
 import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.sun.deploy.util.StringUtils;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -253,5 +254,9 @@ public class ReportUtil {
 
     public static boolean isEmpty(String s) {
         return s == null || s.length() == 0 || s.trim().length() == 0;
+    }
+
+    public static String getDayMonth(LocalDate localDate) {
+        return String.format("%02d.%02d", localDate.getDayOfMonth(), localDate.getMonthValue());
     }
 }

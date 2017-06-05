@@ -2,209 +2,95 @@ package app.entities;
 
 import app.enums.Category;
 import app.enums.Actions;
+import com.sun.org.apache.bcel.internal.generic.NEW;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class Week {
 
-    private String leader;
-    private int weekNumber;
-    private int meetingNew = 0;
-    private int meetingWhite = 0;
-    private int visitNew = 0;
-    private int visitWhite = 0;
-    private int calls = 0;
-    private String start;
-    private String end;
+    private LocalDate start;
+    private LocalDate end;
     private String percents;
     private String groupComments;
 
     private List<Person> whiteList = new ArrayList<>();
-    private List<Person> present = new ArrayList<>();
+    private List<Item> items = new ArrayList<>();
 
     public Week() {}
-
-    public Week(String leader, int weekNumber, List<Person> whiteList)
-    {
-        this.leader = leader;
-        this.weekNumber = weekNumber;
-        this.whiteList = whiteList;
-    }
-
-    public String getWeekName() {
-        return start + "-" + end;
-    }
-
-    public void addPresent(Person person) {
-        this.present.add(person);
-    }
-
-    public void mergeAction(Actions action, Category category) {
-        if (category == Category.WHITE || category == Category.GUEST) {
-            if (action == Actions.MEETING) {
-                increaseMeetingWhite();
-            }
-            if (action == Actions.VISIT) {
-                increaseVisitWhite();
-            }
-        }
-        if (category == Category.NEW) {
-            if (action == Actions.MEETING) {
-                increaseMeetingNew();
-            }
-            if (action == Actions.VISIT) {
-                increaseVisitNew();
-            }
-            if (action == Actions.CALL) {
-                increaseCalls();
-            }
-        }
-    }
 
     public List<Person> getWhiteList() {
         return whiteList;
     }
 
     public List<Person> getPresent() {
-        return present;
+        return items.stream().filter(i -> i.getAction() == Actions.GROUP)
+                .map(Item::getPerson).collect(Collectors.toList());
     }
 
     public int getTotalCount() {
-        return present.size();
-    }
-
-    public int countPresentByCategory(Category category)
-    {
-        return (int) present.stream().filter(p -> p.getCategory() == category).count();
+        return getPresent().size();
     }
 
     public List<Person> getPresentByCategory(Category category)
     {
-        return present.stream().filter(p -> p.getCategory() == category).collect(Collectors.toList());
+        return items.stream().filter(i -> i.getAction() == Actions.GROUP && i.getPerson().getCategory() == category)
+                .map(Item::getPerson).collect(Collectors.toList());
     }
 
-    public List<Person> getWhiteAbsent() {
+    public List<Person> getWhiteAbsent()
+    {
         List<Person> whiteCopy = new ArrayList<>(whiteList);
-        whiteCopy.removeAll(present);
+        whiteCopy.removeAll(getPresentByCategory(Category.WHITE));
         return whiteCopy;
     }
 
     public int getMeetingNew()
     {
-      return meetingNew;
+        return getItemsByActionAndCategory(Actions.MEETING, Category.NEW).size();
     }
 
-    public void increaseMeetingNew()
+    private List<Item> getItemsByActionAndCategory(Actions action, Category category)
     {
-      this.meetingNew++;
+        return items.stream().filter(i -> i.getAction() == action
+                && i.getPerson().getCategory() == category).collect(Collectors.toList());
     }
+
 
     public int getMeetingWhite()
     {
-      return meetingWhite;
-    }
-
-    public void increaseMeetingWhite()
-    {
-      this.meetingWhite++;
+        return getItemsByActionAndCategory(Actions.MEETING, Category.WHITE).size();
     }
 
     public int getVisitNew()
     {
-      return visitNew;
-    }
-
-    public void increaseVisitNew()
-    {
-      this.visitNew++;
-    }
-
-    public void increaseCalls()
-    {
-        this.calls++;
+      return getItemsByActionAndCategory(Actions.VISIT, Category.NEW).size();
     }
 
     public int getVisitWhite()
     {
-      return visitWhite;
-    }
-
-    public void increaseVisitWhite()
-    {
-      this.visitWhite++;
-    }
-
-    public int getWeekNumber() {
-        return weekNumber;
-    }
-
-    public void setWeekNumber(int weekNumber) {
-        this.weekNumber = weekNumber;
+      return getItemsByActionAndCategory(Actions.VISIT, Category.WHITE).size();
     }
 
     public int getCalls() {
-        return calls;
+        return getItemsByActionAndCategory(Actions.CALL, Category.NEW).size();
     }
 
-    public String getLeader() {
-        return leader;
-    }
-
-    public void setLeader(String leader) {
-        this.leader = leader;
-    }
-
-    public void setMeetingNew(int meetingNew) {
-        this.meetingNew = meetingNew;
-    }
-
-    public void setMeetingWhite(int meetingWhite) {
-        this.meetingWhite = meetingWhite;
-    }
-
-    public void setVisitNew(int visitNew) {
-        this.visitNew = visitNew;
-    }
-
-    public void setVisitWhite(int visitWhite) {
-        this.visitWhite = visitWhite;
-    }
-
-    public void setCalls(int calls) {
-        this.calls = calls;
-    }
-
-    public void setWhiteList(List<Person> whiteList) {
-        this.whiteList = whiteList;
-    }
-
-    public void setPresent(List<Person> present) {
-        this.present = present;
-    }
-
-    public String getStart() {
+    public LocalDate getStart() {
         return start;
     }
 
-    public void setStart(int month, int day) {
-        this.start = String.format("%02d.%02d", day, month);
-    }
-
-    public String getEnd() {
+    public LocalDate getEnd() {
         return end;
     }
 
-    public void setEnd(int month, int day) {
-        this.end = String.format("%02d.%02d", day, month);
-    }
-
-    public void setStart(String start) {
+    public void setStart(LocalDate start) {
         this.start = start;
     }
 
-    public void setEnd(String end) {
+    public void setEnd(LocalDate end) {
         this.end = end;
     }
 
@@ -224,4 +110,7 @@ public class Week {
         this.groupComments = groupComments;
     }
 
+    public List<Item> getItems() {
+        return items;
+    }
 }

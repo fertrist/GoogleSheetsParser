@@ -26,16 +26,8 @@ public class Person implements Cloneable {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public int getIndex() {
         return index;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
     }
 
     @Override
@@ -48,7 +40,6 @@ public class Person implements Cloneable {
         if (index != person.index) return false;
         if (name != null ? !name.equals(person.name) : person.name != null) return false;
         return category == person.category;
-
     }
 
     @Override

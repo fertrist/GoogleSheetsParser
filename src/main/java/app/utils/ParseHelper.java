@@ -7,6 +7,7 @@ import app.enums.Category;
 import com.google.api.services.sheets.v4.model.*;
 import javafx.util.Pair;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +27,7 @@ public class ParseHelper {
      */
     public static List<Person> parsePeople(GridData peopleData, Group group) {
         List<Person> people = new ArrayList<>();
-
+        int offset = Integer.valueOf(group.getDataFirstRow()) - 1;
         for (int i = 0; i < peopleData.getRowData().size(); i++) {
 
             RowData r = peopleData.getRowData().get(i);
@@ -56,7 +57,7 @@ public class ParseHelper {
                 {
                     category = Category.NEW;
                 }
-                people.add(new Person(category, cellData.getEffectiveValue().getStringValue(), i));
+                people.add(new Person(category, cellData.getEffectiveValue().getStringValue(), offset + i));
             }
         }
         return people;
@@ -101,6 +102,28 @@ public class ParseHelper {
             columnToMonthMap.get(month).add(i);
         }
         return columnToMonthMap;
+    }
+
+    public static Map<Integer, LocalDate> getColumnToDateMap(List<CellData> monthsCells, List<CellData> datesCells) {
+        String month = "";
+
+        Map<Integer, LocalDate> columnToDateMap = new HashMap<>();
+        int currentYear = LocalDate.now().getYear();
+        for (int i = 0; i < datesCells.size(); i++)
+        {
+            int monthIndex = Math.min(i, monthsCells.size() - 1);
+            int dayOfMonth = datesCells.get(i).getEffectiveValue().getNumberValue().intValue();
+
+            String newMonth = getMonthFromString(monthsCells.get(monthIndex).getEffectiveValue() != null
+                    ? monthsCells.get(monthIndex).getEffectiveValue().getStringValue().toLowerCase() : month);
+
+            if (!newMonth.equals(month))
+            {
+                month = newMonth;
+            }
+            columnToDateMap.put(i, LocalDate.of(currentYear, getMonthNumber(month), dayOfMonth));
+        }
+        return columnToDateMap;
     }
 
     public static Pair<Integer, Integer> getStartEndColumns(Map<String, List<Integer>> columnToMonthMap,

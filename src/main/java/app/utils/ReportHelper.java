@@ -80,7 +80,7 @@ public class ReportHelper {
         System.out.printf(format, "Неделя", "По списку", "Было всего", "Cписочных", "Гости", "Новые люди",
                 "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки");
         for (Week week : weeks) {
-            System.out.printf(format, week.getWeekName(), week.getWhiteList().size(), week.getPresent().size(), week.getPresentByCategory(Category.WHITE).size(),
+            System.out.printf(format, week.getStart(), week.getWhiteList().size(), week.getPresent().size(), week.getPresentByCategory(Category.WHITE).size(),
                     week.getPresentByCategory(Category.GUEST).size(), week.getPresentByCategory(Category.NEW).size(), week.getVisitWhite(),
                     week.getMeetingWhite(), week.getVisitNew(), week.getMeetingNew(), week.getCalls());
         }
@@ -128,11 +128,19 @@ public class ReportHelper {
         RowData rowData = new RowData();
 
         CellData leader = getCellWithValue(group.getLeaderName());
-        CellData weekName = getCellWithValue(week.getWeekName());
+        CellData weekName = getCellWithValue(ReportUtil.getDayMonth(week.getStart())
+                + " -   " + ReportUtil.getDayMonth(week.getEnd()));
         CellData presentTotal = getCellWithValue(week.getTotalCount());
         CellData listWhite = getCellWithValue(week.getWhiteList().size());
         if (lastWeek) {
-            listWhite.setNote(group.getAddedPeople().toString());
+            String note = "";
+            for (String name : group.getAddedPeople()) {
+                note += "+ " + name + "\n";
+            }
+            for (String name : group.getRemovedPeople()) {
+                note += "- " + name + "\n";
+            }
+            listWhite.setNote(note);
         }
         CellData presentWhite = getCell(week.getPresentByCategory(Category.WHITE).size(), listToNote(week.getWhiteAbsent()));
         CellData presentGuests = getCell(week.getPresentByCategory(Category.GUEST).size(), listToNote(week.getPresentByCategory(Category.GUEST)));
@@ -152,7 +160,7 @@ public class ReportHelper {
         return rowData;
     }
 
-    public static void reportWeeks(Sheets service, Group group, List<Week> weeks, int row) throws IOException {
+    public static void printWeeks(Sheets service, Group group, List<Week> weeks, int row) throws IOException {
         prettyPrintWeeks(weeks);
 
         List<Request> requests = new ArrayList<>();
