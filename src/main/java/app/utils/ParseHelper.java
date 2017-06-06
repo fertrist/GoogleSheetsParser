@@ -22,50 +22,83 @@ import static app.utils.ReportUtil.findMonthForColumn;
  */
 public class ParseHelper {
 
+    private static final String COLORS_TITLE = "условные обозначения";
+
     /**
      * Retrieves people by categories
      */
     public static List<Person> parsePeople(GridData peopleData, Group group) {
         List<Person> people = new ArrayList<>();
+
         int offset = Integer.valueOf(group.getDataFirstRow()) - 1;
+
         for (int i = 0; i < peopleData.getRowData().size(); i++) {
 
             RowData r = peopleData.getRowData().get(i);
-            if (r == null || r.getValues() == null)
-            {
-                continue;
-            }
 
-            CellData cellData = r.getValues().get(0);
-            CellFormat effectiveFormat = cellData.getEffectiveFormat();
+            if (isRowEmpty(r)) continue;
 
-            if (!effectiveFormat.getTextFormat().getUnderline() && cellData.getEffectiveValue() != null) {
+            CellData cellData = r.getValues().get(1); // column with people names
 
-                String name = cellData.getEffectiveValue().getStringValue();
-                Category category;
-                boolean isAdded = containsIgnoreCase(group.getAddedPeople(), name);
-                if (isWhite(effectiveFormat.getBackgroundColor()) && !isAdded)
-                {
-                    category = Category.WHITE;
-                }
-                else if (isGrey(effectiveFormat.getBackgroundColor())
-                        || name.toLowerCase().contains("(и.с") || name.toLowerCase().contains("(исп.срок)"))
-                {
-                    category = Category.GUEST;
-                }
-                else
-                {
-                    category = Category.NEW;
-                }
+            if (isColorsTitle(cellData)) return people;
+
+            if (!isUnderline(cellData) && !isCellEmpty(cellData)) {
+                Category category = defineCategory(cellData, group);
                 people.add(new Person(category, cellData.getEffectiveValue().getStringValue(), offset + i));
             }
         }
+
         return people;
     }
 
-    public static Map<Actions, Color> parseColors(GridData gridData) {
+    private static Category defineCategory(CellData cellData, Group group) {
+
+        CellFormat effectiveFormat = cellData.getEffectiveFormat();
+
+        String name = cellData.getEffectiveValue().getStringValue();
+        Category category;
+
+        // handle added/removed people (they first are considered as if they weren't added/removed)
+        boolean isAdded = containsIgnoreCase(group.getAddedPeople(), name);
+        boolean isRemoved = containsIgnoreCase(group.getRemovedPeople(), name);
+        boolean onTrial = name.toLowerCase().contains("(и.с") || name.toLowerCase().contains("(исп.срок)");
+
+        if ((isWhite(effectiveFormat.getBackgroundColor()) && !isAdded) || isRemoved) {
+            category = Category.WHITE;
+        }
+        else if (isGrey(effectiveFormat.getBackgroundColor()) || onTrial) {
+            category = Category.GUEST;
+        }
+        else {
+            category = Category.NEW;
+        }
+
+        return category;
+    }
+
+    private static boolean isRowEmpty(RowData r) {
+        return r == null || r.getValues() == null;
+    }
+
+    private static boolean isColorsTitle(CellData cellData) {
+        return isUnderline(cellData) && cellData.getEffectiveValue() != null
+                && cellData.getEffectiveValue().getStringValue().equalsIgnoreCase(COLORS_TITLE);
+    }
+
+    private static boolean isUnderline(CellData cellData) {
+        return cellData.getEffectiveFormat() != null && cellData.getEffectiveFormat().getTextFormat().getUnderline();
+    }
+
+    private static boolean isCellEmpty(CellData cellData) {
+        return cellData.getEffectiveValue() == null || cellData.getEffectiveValue().getStringValue() == null
+                || cellData.getEffectiveValue().getStringValue().isEmpty();
+    }
+
+    public static Map<Actions, Color> parseColors(GridData gridData, int colorsRow) {
         Map<Actions, Color> colors = new HashMap<>();
-        for (RowData r : gridData.getRowData()) {
+
+        for (int j = colorsRow; j < colorsRow + 30; j++) {
+            RowData r = gridData.getRowData().get(j);
             if (r == null || r.getValues() == null) {
                 continue;
             }
@@ -73,7 +106,7 @@ public class ParseHelper {
             CellData nameCell = r.getValues().get(1);
             if (nameCell.getEffectiveValue() == null || colorCell.getEffectiveFormat() == null
                     || colorCell.getEffectiveFormat().getBackgroundColor() == null) {
-                continue;
+                break;
             }
             Color backgroundColor = colorCell.getEffectiveFormat().getBackgroundColor();
             Actions mark = Actions.getEnumFor(nameCell.getEffectiveValue().getStringValue());
@@ -81,6 +114,26 @@ public class ParseHelper {
                 colors.putIfAbsent(mark, backgroundColor);
         }
         return colors;
+    }
+
+    public static Pair<Integer, Integer> getLastDataAndColorsRow(GridData gridData, int fromIndex, int offsetFromStart) {
+        int lastDataRow = 0;
+        int colorsRow = 0;
+
+        for (int i = fromIndex; i < gridData.getRowData().size(); i++) {
+
+            RowData r = gridData.getRowData().get(i);
+
+            if (isRowEmpty(r) || isCellEmpty(r.getValues().get(1))) continue;
+
+            if (isColorsTitle(r.getValues().get(1))) {
+                colorsRow = i;
+                break;
+            }
+
+            lastDataRow = i;
+        }
+        return new Pair<>(lastDataRow + offsetFromStart, colorsRow + offsetFromStart);
     }
 
     public static Map<String, List<Integer>> getColumnToMonthMap(List<CellData> monthsCells, List<CellData> datesCells) {

@@ -11,9 +11,7 @@ public class Group implements Comparable<Group> {
     private String leaderName;
     private String rowWithMonths;
     private String groupDay;
-    private String colorsRow;
     private String dataFirstRow;
-    private String dataLastRow;
     private String peopleColumn;
     private List<String> addedPeople;
     private List<String> removedPeople;
@@ -24,9 +22,7 @@ public class Group implements Comparable<Group> {
         this.leaderName = builder.leaderName;
         this.rowWithMonths = builder.rowWithMonths;
         this.groupDay = builder.groupDay;
-        this.colorsRow = builder.colorsRow;
         this.dataFirstRow = builder.dataFirstRow;
-        this.dataLastRow = builder.dataLastRow;
         this.peopleColumn = builder.peopleColumn;
         this.addedPeople = builder.addedPeople;
         this.removedPeople= builder.removedPeople;
@@ -46,9 +42,7 @@ public class Group implements Comparable<Group> {
         private String leaderName;
         private String rowWithMonths;
         private String groupDay;
-        private String colorsRow;
         private String dataFirstRow;
-        private String dataLastRow;
         private String peopleColumn;
         private List<String> addedPeople;
         private List<String> removedPeople;
@@ -78,18 +72,8 @@ public class Group implements Comparable<Group> {
             return this;
         }
 
-        public Builder markingRow(String markingRow) {
-            this.colorsRow = markingRow;
-            return this;
-        }
-
         public Builder dataStartRow(String dataStartRow) {
             this.dataFirstRow = dataStartRow;
-            return this;
-        }
-
-        public Builder dataEndRow(String dataEndRow) {
-            this.dataLastRow = dataEndRow;
             return this;
         }
 
@@ -113,10 +97,6 @@ public class Group implements Comparable<Group> {
         }
     }
 
-    public int getGroupNumber() {
-        return groupNumber;
-    }
-
     public String getSpreadSheetId() {
         return spreadSheetId;
     }
@@ -133,72 +113,20 @@ public class Group implements Comparable<Group> {
         return groupDay;
     }
 
-    public String getColorsRow() {
-        return colorsRow;
-    }
-
     public String getDataFirstRow() {
         return dataFirstRow;
-    }
-
-    public String getDataLastRow() {
-        return dataLastRow;
     }
 
     public String getPeopleColumn() {
         return peopleColumn;
     }
 
-    public void setGroupNumber(int groupNumber) {
-        this.groupNumber = groupNumber;
-    }
-
-    public void setSpreadSheetId(String spreadSheetId) {
-        this.spreadSheetId = spreadSheetId;
-    }
-
-    public void setLeaderName(String leaderName) {
-        this.leaderName = leaderName;
-    }
-
-    public void setRowWithMonths(String rowWithMonths) {
-        this.rowWithMonths = rowWithMonths;
-    }
-
-    public void setGroupDay(String groupDay) {
-        this.groupDay = groupDay;
-    }
-
-    public void setColorsRow(String colorsRow) {
-        this.colorsRow = colorsRow;
-    }
-
-    public void setDataFirstRow(String dataFirstRow) {
-        this.dataFirstRow = dataFirstRow;
-    }
-
-    public void setDataLastRow(String dataLastRow) {
-        this.dataLastRow = dataLastRow;
-    }
-
-    public void setPeopleColumn(String peopleColumn) {
-        this.peopleColumn = peopleColumn;
-    }
-
     public List<String> getAddedPeople() {
         return addedPeople;
     }
 
-    public void setAddedPeople(List<String> addedPeople) {
-        this.addedPeople = addedPeople;
-    }
-
     public List<String> getRemovedPeople() {
         return removedPeople;
-    }
-
-    public void setRemovedPeople(List<String> removedPeople) {
-        this.removedPeople = removedPeople;
     }
 
     @Override
@@ -209,9 +137,7 @@ public class Group implements Comparable<Group> {
                 .add("leaderName", leaderName)
                 .add("rowWithMonths", rowWithMonths)
                 .add("groupDay", groupDay)
-                .add("colorsRow", colorsRow)
                 .add("dataFirstRow", dataFirstRow)
-                .add("dataLastRow", dataLastRow)
                 .add("peopleColumn", peopleColumn)
                 .toString();
     }

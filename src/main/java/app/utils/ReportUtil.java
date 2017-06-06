@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class ReportUtil {
 
-    private enum Month {
+    public enum Month {
         JAN("январь"), FEB("февраль"), MAR("март"),
         APR("апрель"), MAY("май"), JUN("июнь"),
         JUL("июль"), AUG("август"), SEP("сентябрь"),

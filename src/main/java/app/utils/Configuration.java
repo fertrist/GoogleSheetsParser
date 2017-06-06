@@ -32,9 +32,7 @@ public class Configuration {
     public static final String LEADER = "leader.name";
     public static final String ROW_WITH_MONTHS = "row.with.months";
     public static final String GROUP_DAY = "group.day";
-    public static final String COLORS_ROW = "colors.row";
     public static final String DATA_FIRST_ROW = "data.first.row";
-    public static final String DATA_LAST_ROW = "data.last.row";
     public static final String PEOPLE_COLUMN = "people.column";
     public static final String ADDED_PEOPLE = "added.people";
     public static final String REMOVED_PEOPLE = "removed.people";
@@ -134,13 +132,8 @@ public class Configuration {
         dataFirstRow = dataFirstRow != null ? dataFirstRow
                 : String.valueOf(Integer.valueOf(rowWithMonths) + 2);
 
-        String dataLastRow = getGroupProperty(DATA_LAST_ROW, groupNo);
-
-        String colorsRow = getGroupProperty(COLORS_ROW, groupNo);
-        colorsRow = colorsRow != null ? colorsRow
-                : String.valueOf(Integer.valueOf(dataLastRow) + 2);
-
         String addedPeopleStr = getGroupProperty(ADDED_PEOPLE, groupNo);
+
         String removedPeopleStr = getGroupProperty(REMOVED_PEOPLE, groupNo);
 
         List<String> addedPeople = isEmpty(addedPeopleStr) ? new ArrayList<>()
@@ -154,8 +147,6 @@ public class Configuration {
                 .monthsRow(rowWithMonths)
                 .peopleColumn(peopleColumn)
                 .dataStartRow(dataFirstRow)
-                .dataEndRow(dataLastRow)
-                .markingRow(colorsRow)
                 .addedPeople(addedPeople)
                 .removedPeople(removedPeople)
                 .build();
@@ -210,10 +201,6 @@ public class Configuration {
 
     public static String getReportEndDate() {
         return reportEndDate;
-    }
-
-    public static void setReportStartDate(String reportStartDate) {
-        Configuration.reportStartDate = reportStartDate;
     }
 
 }

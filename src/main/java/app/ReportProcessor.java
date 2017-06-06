@@ -4,7 +4,7 @@ import app.entities.*;
 import app.enums.Category;
 import app.enums.Actions;
 import app.utils.Configuration;
-import app.utils.ParseHelper;
+import app.utils.ReportUtil;
 import app.utils.SheetsApp;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
@@ -31,6 +31,8 @@ import static java.util.Collections.singletonList;
  * -DCONFIGURATION_FILE=/home/myUser/.../resources/report.configuration.properties
  */
 public class ReportProcessor extends SheetsApp {
+
+    private static final int MAX_ROWS = 120;
 
     public static void main(String[] args) throws IOException {
         Sheets service = getSheetsService();
@@ -68,23 +70,29 @@ public class ReportProcessor extends SheetsApp {
         String peopleColumn = group.getPeopleColumn();
 
         String monthsRange = group.getRowWithMonths() + ":" + group.getRowWithMonths();
-        String peopleListRange = peopleColumn + group.getDataFirstRow() + ":" + peopleColumn + group.getDataLastRow();
-        String colorStartColumn = Character.valueOf((char) (peopleColumn.toCharArray()[0] - 1)).toString();
-        String colorsRange = colorStartColumn + group.getColorsRow() + ":" + peopleColumn + (Integer.valueOf(group.getColorsRow()) + 10);
+
+        String peopleColorRange = (char) (peopleColumn.toCharArray()[0] - 1) + group.getDataFirstRow() + ":" + peopleColumn + MAX_ROWS;
+        int dataOffset = Integer.valueOf(group.getDataFirstRow());
 
         Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
-                .setRanges(Arrays.asList(monthsRange, colorsRange, peopleListRange)).setIncludeGridData(true).execute();
+                .setRanges(Arrays.asList(monthsRange, peopleColorRange)).setIncludeGridData(true).execute();
 
         //get moths and rough start end columns
         Sheet sheet = spreadsheet.getSheets().get(0); //sheet object required to get merged cells
         Pair<Integer, Integer> roughColumnsRange = getApproximateColumnsRange(sheet);
-        System.out.printf("roughColumnsRange : [%d : %d] %n", roughColumnsRange.getKey(), roughColumnsRange.getValue());
         System.out.printf("roughColumnsRange : [%s : %s] %n", columnToLetter(roughColumnsRange.getKey()), columnToLetter(roughColumnsRange.getValue()));
 
-        Map<Actions, Color> colors = parseColors(sheet.getData().get(1));
-        List<Person> people = parsePeople(sheet.getData().get(2), group);
+        List<Person> people = parsePeople(sheet.getData().get(1), group);
 
-        String dataRange = columnToLetter(roughColumnsRange.getKey() + 1) + 1 + ":" + columnToLetter(roughColumnsRange.getValue()) + group.getDataLastRow();
+        Pair<Integer, Integer> rows = getLastDataAndColorsRow(sheet.getData().get(1), people.size() + dataOffset, dataOffset);
+        int lastDataRow = rows.getKey();
+        int colorsRow = rows.getValue();
+
+        Map<Actions, Color> colors = parseColors(sheet.getData().get(1), colorsRow);
+
+        String dataRange = columnToLetter(roughColumnsRange.getKey() + 1) + 1 + ":" +
+                columnToLetter(roughColumnsRange.getValue()) + lastDataRow;
+
         spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(singletonList(dataRange)).setIncludeGridData(true).execute();
 
         List<RowData> dataRows = spreadsheet.getSheets().get(0).getData().get(0).getRowData();
@@ -111,6 +119,7 @@ public class ReportProcessor extends SheetsApp {
         handleAddedRemovedToList(weeks, group, people);
 
         return weeks;
+
     }
 
     private static void handleAddedRemovedToList(List<Week> weeks, Group group, List<Person> people) {
@@ -126,8 +135,8 @@ public class ReportProcessor extends SheetsApp {
             }
             if (containsIgnoreCase(group.getRemovedPeople(), person.getName())) {
                 Person updated = person.clone();
-                updated.setCategory(Category.NEW);
                 week.getWhiteList().remove(updated);
+                updated.setCategory(Category.NEW);
             }
         }
         for (Item item : week.getItems()) {
@@ -148,7 +157,7 @@ public class ReportProcessor extends SheetsApp {
         weeks.forEach(week -> week.getWhiteList().addAll(whiteList));
         weeks.forEach(
                 w -> w.getItems().addAll(items.stream()
-                .filter(i -> withinStartEnd(i.getDate(), w.getStart(), w.getEnd())).collect(Collectors.toList())
+                    .filter(i -> withinStartEnd(i.getDate(), w.getStart(), w.getEnd())).collect(Collectors.toList())
                 ));
         return weeks;
     }
@@ -278,27 +287,56 @@ public class ReportProcessor extends SheetsApp {
 
         RowData monthsRow = monthsSheet.getData().get(0).getRowData().get(0);
         List<CellData> cellDatas = monthsRow.getValues();
+
         List<GridRange> merges = monthsSheet.getMerges();
         merges.sort((Comparator.comparing(GridRange::getStartColumnIndex)));
 
-        int initialIndex = merges.size() > 12 ? merges.size() - 12 : 0;
-        merges = merges.subList(initialIndex, merges.size());
+        Map<String, Pair<Integer, Integer>> monthsMap = new HashMap<>();
+
+        for (GridRange merge : merges) {
+
+            int startIndex = merge.getStartColumnIndex();
+
+            String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue();
+
+            if (monthName == null) continue;
+
+            monthName = getMonthFromString(monthName);
+
+            monthsMap.put(monthName, new Pair<>(merge.getStartColumnIndex(), merge.getEndColumnIndex()));
+        }
 
         int startColumn = 0;
         int endColumn = 0;
-        for (GridRange merge : merges) {
-            int startIndex = merge.getStartColumnIndex();
-            String monthName = cellDatas.get(startIndex).getEffectiveValue().getStringValue();
-            if (monthName == null) continue;
-            monthName = monthName.toLowerCase();
-            if (monthName.contains(getReportStartMonth())) {
-                startColumn = merge.getStartColumnIndex();
-            }
-            if (monthName.contains(getReportEndMonth())) {
-                endColumn = merge.getEndColumnIndex();
-            }
+
+        List<String> coveredMonths = getCoveredMonths();
+        for(String month : coveredMonths) {
+
+            if (monthsMap.get(month) == null) continue;
+
+            if (startColumn == 0)
+                startColumn = monthsMap.get(month).getKey();
+
+            endColumn = Math.max(endColumn, monthsMap.get(month).getValue());
         }
+
         return new Pair<>(startColumn, endColumn);
+    }
+
+    private static List<String> getCoveredMonths() {
+        LocalDate reportStartDate = LocalDate.parse(getReportStartDate());
+        LocalDate reportEndDate = LocalDate.parse(getReportEndDate());
+
+        Set<String> months = new HashSet<>();
+
+        for (LocalDate tmp = reportStartDate; tmp.isBefore(reportEndDate) || tmp.isEqual(reportEndDate);
+             tmp = tmp.plusDays(1))
+        {
+            Month[] values = Month.values();
+            int ordinal = tmp.getMonth().ordinal();
+            months.add(values[ordinal].getName());
+        }
+        return new ArrayList<>(months);
     }
 
     /**
