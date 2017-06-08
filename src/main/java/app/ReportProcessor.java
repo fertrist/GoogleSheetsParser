@@ -110,8 +110,7 @@ public class ReportProcessor extends SheetsApp {
 
         List<Item> items = getItems(people, colors, startEndColumns, dataRows, columnToDateMap);
 
-        List<Week> weeks = getWeeks(dataRows,
-                startEndColumns.getKey(), startEndColumns.getValue(), columnToDateMap, group, colors);
+        List<Week> weeks = getWeeks(dataRows, startEndColumns, columnToDateMap, group, colors);
 
         weeks = fillWeeks(items, people, weeks);
 
@@ -191,7 +190,7 @@ public class ReportProcessor extends SheetsApp {
         return items;
     }
 
-    private static List<Week> getWeeks(List<RowData> dataRows, int startColumn, int endColumn,
+    private static List<Week> getWeeks(List<RowData> dataRows, Pair<Integer, Integer> startEndColumn,
                                        Map<Integer, LocalDate> columnToDateMap, Group group, Map<Actions, Color> colors) {
         int dataFirstRow = Integer.valueOf(group.getDataFirstRow());
         dataFirstRow--; // offset because of indexing
@@ -203,11 +202,9 @@ public class ReportProcessor extends SheetsApp {
         RowData datesRow = dataRows.get(2);
         List<CellData> datesCells = datesRow.getValues();
 
-        int currentYear = LocalDate.now().getYear();
-
         List<Week> weeks = new ArrayList<>();
 
-        for (int weekIndex = startColumn; weekIndex <= endColumn; weekIndex++)
+        for (int weekIndex = startEndColumn.getKey(); weekIndex <= startEndColumn.getValue(); weekIndex++)
         {
             int dayIndex = weekIndex - 1;
             int groupDayIndex = 0;
@@ -228,16 +225,13 @@ public class ReportProcessor extends SheetsApp {
             } while (!weekDay.equalsIgnoreCase("вс") && dayIndex < (datesCells.size() - 1));
 
             Week week = new Week();
-            int monthNumber = findMonthForColumn(columnToDateMap, weekIndex);
-            int dayNumber = datesCells.get(weekIndex).getEffectiveValue().getNumberValue().intValue();
-            week.setStart(LocalDate.of(currentYear, monthNumber, dayNumber));
+            week.setStart(columnToDateMap.get(weekIndex));
 
             setGroupComments(week, daysCells.get(groupDayIndex), datesCells.get(groupDayIndex));
 
             weekIndex += (dayIndex - weekIndex);
-            monthNumber = findMonthForColumn(columnToDateMap, weekIndex);
-            dayNumber = datesCells.get(weekIndex).getEffectiveValue().getNumberValue().intValue();
-            week.setEnd(LocalDate.of(currentYear, monthNumber, dayNumber));
+
+            week.setEnd(columnToDateMap.get(weekIndex));
 
             weeks.add(week);
         }

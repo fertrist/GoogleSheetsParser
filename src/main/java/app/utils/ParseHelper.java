@@ -168,7 +168,7 @@ public class ParseHelper {
         for (int i = 0; i < datesCells.size(); i++)
         {
             int day = datesCells.get(i).getEffectiveValue().getNumberValue().intValue();
-            String month = findMonthForColumnStr(columnToDate, i);
+            String month = findMonthForColumn(columnToDate, i);
             if (month.equalsIgnoreCase(getReportStartMonth())
                     && day == getReportStartDay())
             {
@@ -182,7 +182,7 @@ public class ParseHelper {
             }
         }
         if (endColumn == 0) {
-            endColumn = datesCells.size();
+            endColumn = datesCells.size() - 1;
         }
         return new Pair<>(startColumn, endColumn);
     }

@@ -211,11 +211,7 @@ public class ReportUtil {
         return month;
     }
 
-    public static int findMonthForColumn(Map<Integer, LocalDate> map, int c) {
-        return map.get(c).getMonthValue();
-    }
-
-    public static String findMonthForColumnStr(Map<Integer, LocalDate> map, int c) {
+    public static String findMonthForColumn(Map<Integer, LocalDate> map, int c) {
         int monthNo = map.get(c).getMonthValue();
         return Month.values()[monthNo-1].getName();
     }
