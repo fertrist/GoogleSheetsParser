@@ -4,7 +4,7 @@ import app.entities.*;
 import app.enums.Category;
 import app.enums.Actions;
 import app.utils.Configuration;
-import app.utils.ReportUtil;
+import app.utils.ParseHelper;
 import app.utils.SheetsApp;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
@@ -79,8 +79,6 @@ public class ReportProcessor extends SheetsApp {
 
         //get moths and rough start end columns
         Sheet sheet = spreadsheet.getSheets().get(0); //sheet object required to get merged cells
-        Pair<Integer, Integer> roughColumnsRange = getApproximateColumnsRange(sheet);
-        System.out.printf("roughColumnsRange : [%s : %s] %n", columnToLetter(roughColumnsRange.getKey()), columnToLetter(roughColumnsRange.getValue()));
 
         List<Person> people = parsePeople(sheet.getData().get(1), group);
 
@@ -88,10 +86,14 @@ public class ReportProcessor extends SheetsApp {
         int lastDataRow = rows.getKey();
         int colorsRow = rows.getValue();
 
-        Map<Actions, Color> colors = parseColors(sheet.getData().get(1), colorsRow);
+        Map<Actions, Color> colors = parseColors(sheet.getData().get(1), colorsRow-dataOffset);
+
+        // TODO inhence to not do extra data fetch, do it exact
+        Pair<Integer, Integer> roughColumnsRange = getApproximateColumnsRange(sheet);
+        System.out.printf("roughColumnsRange : [%s : %s] %n", columnToLetter(roughColumnsRange.getKey()), columnToLetter(roughColumnsRange.getValue()));
 
         String dataRange = columnToLetter(roughColumnsRange.getKey() + 1) + 1 + ":" +
-                columnToLetter(roughColumnsRange.getValue()) + lastDataRow;
+                columnToLetter(roughColumnsRange.getValue()) + (colorsRow + ParseHelper.DATA_OVERLAP);
 
         spreadsheet = service.spreadsheets().get(spreadsheetId).setRanges(singletonList(dataRange)).setIncludeGridData(true).execute();
 
@@ -104,15 +106,12 @@ public class ReportProcessor extends SheetsApp {
 
         Map<Integer, LocalDate> columnToDateMap = getColumnToDateMap(monthsCells, datesCells);
 
-        // parse data in oop way, translate to objects
-        Map<String, List<Integer>> columnToMonthMap = getColumnToMonthMap(monthsCells, datesCells);
-
-        Pair<Integer, Integer> startEndColumns = getStartEndColumns(columnToMonthMap, datesCells);
+        Pair<Integer, Integer> startEndColumns = getStartEndColumns(columnToDateMap, datesCells);
 
         List<Item> items = getItems(people, colors, startEndColumns, dataRows, columnToDateMap);
 
         List<Week> weeks = getWeeks(dataRows,
-                startEndColumns.getKey(), startEndColumns.getValue(), columnToMonthMap, group, colors);
+                startEndColumns.getKey(), startEndColumns.getValue(), columnToDateMap, group, colors);
 
         weeks = fillWeeks(items, people, weeks);
 
@@ -193,7 +192,7 @@ public class ReportProcessor extends SheetsApp {
     }
 
     private static List<Week> getWeeks(List<RowData> dataRows, int startColumn, int endColumn,
-                                       Map<String, List<Integer>> columnToMonthMap, Group group, Map<Actions, Color> colors) {
+                                       Map<Integer, LocalDate> columnToDateMap, Group group, Map<Actions, Color> colors) {
         int dataFirstRow = Integer.valueOf(group.getDataFirstRow());
         dataFirstRow--; // offset because of indexing
         String groupWeekDay = getWeekDay(Integer.valueOf(group.getGroupDay()));
@@ -229,14 +228,14 @@ public class ReportProcessor extends SheetsApp {
             } while (!weekDay.equalsIgnoreCase("вс") && dayIndex < (datesCells.size() - 1));
 
             Week week = new Week();
-            int monthNumber = findMonthForColumn(columnToMonthMap, weekIndex);
+            int monthNumber = findMonthForColumn(columnToDateMap, weekIndex);
             int dayNumber = datesCells.get(weekIndex).getEffectiveValue().getNumberValue().intValue();
             week.setStart(LocalDate.of(currentYear, monthNumber, dayNumber));
 
             setGroupComments(week, daysCells.get(groupDayIndex), datesCells.get(groupDayIndex));
 
             weekIndex += (dayIndex - weekIndex);
-            monthNumber = findMonthForColumn(columnToMonthMap, weekIndex);
+            monthNumber = findMonthForColumn(columnToDateMap, weekIndex);
             dayNumber = datesCells.get(weekIndex).getEffectiveValue().getNumberValue().intValue();
             week.setEnd(LocalDate.of(currentYear, monthNumber, dayNumber));
 

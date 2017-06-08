@@ -15,7 +15,6 @@ import java.util.Map;
 
 import static app.utils.Configuration.*;
 import static app.utils.ReportUtil.*;
-import static app.utils.ReportUtil.findMonthForColumn;
 
 /**
  * Does stuff related to parsing.
@@ -23,6 +22,7 @@ import static app.utils.ReportUtil.findMonthForColumn;
 public class ParseHelper {
 
     private static final String COLORS_TITLE = "условные обозначения";
+    public static final Integer DATA_OVERLAP = 30;
 
     /**
      * Retrieves people by categories
@@ -96,18 +96,21 @@ public class ParseHelper {
 
     public static Map<Actions, Color> parseColors(GridData gridData, int colorsRow) {
         Map<Actions, Color> colors = new HashMap<>();
+        List<RowData> rows = gridData.getRowData();
+        for (int j = colorsRow + 1; j < colorsRow + DATA_OVERLAP; j++) {
+            RowData r = rows.get(j);
 
-        for (int j = colorsRow; j < colorsRow + 30; j++) {
-            RowData r = gridData.getRowData().get(j);
-            if (r == null || r.getValues() == null) {
-                continue;
-            }
+            if (isRowEmpty(r)) continue;
+
             CellData colorCell = r.getValues().get(0);
             CellData nameCell = r.getValues().get(1);
-            if (nameCell.getEffectiveValue() == null || colorCell.getEffectiveFormat() == null
-                    || colorCell.getEffectiveFormat().getBackgroundColor() == null) {
+
+            if (isCellEmpty(nameCell) ||
+                    (colorCell.getEffectiveFormat() == null
+                    || colorCell.getEffectiveFormat().getBackgroundColor() == null)) {
                 break;
             }
+
             Color backgroundColor = colorCell.getEffectiveFormat().getBackgroundColor();
             Actions mark = Actions.getEnumFor(nameCell.getEffectiveValue().getStringValue());
             if (mark != null)
@@ -120,7 +123,7 @@ public class ParseHelper {
         int lastDataRow = 0;
         int colorsRow = 0;
 
-        for (int i = fromIndex; i < gridData.getRowData().size(); i++) {
+        for (int i = fromIndex - 5; i < gridData.getRowData().size(); i++) {
 
             RowData r = gridData.getRowData().get(i);
 
@@ -134,27 +137,6 @@ public class ParseHelper {
             lastDataRow = i;
         }
         return new Pair<>(lastDataRow + offsetFromStart, colorsRow + offsetFromStart);
-    }
-
-    public static Map<String, List<Integer>> getColumnToMonthMap(List<CellData> monthsCells, List<CellData> datesCells) {
-        String month = "";
-
-        Map<String, List<Integer>> columnToMonthMap = new HashMap<>();
-        for (int i = 0; i < datesCells.size(); i++)
-        {
-            int monthIndex = Math.min(i, monthsCells.size() - 1);
-
-            String newMonth = getMonthFromString(monthsCells.get(monthIndex).getEffectiveValue() != null
-                    ? monthsCells.get(monthIndex).getEffectiveValue().getStringValue().toLowerCase() : month);
-
-            if (!newMonth.equals(month))
-            {
-                month = newMonth;
-                columnToMonthMap.put(month, new ArrayList<>());
-            }
-            columnToMonthMap.get(month).add(i);
-        }
-        return columnToMonthMap;
     }
 
     public static Map<Integer, LocalDate> getColumnToDateMap(List<CellData> monthsCells, List<CellData> datesCells) {
@@ -179,25 +161,28 @@ public class ParseHelper {
         return columnToDateMap;
     }
 
-    public static Pair<Integer, Integer> getStartEndColumns(Map<String, List<Integer>> columnToMonthMap,
+    public static Pair<Integer, Integer> getStartEndColumns(Map<Integer, LocalDate> columnToDate,
                                                             List<CellData> datesCells) {
         int startColumn = 0;
         int endColumn = 0;
         for (int i = 0; i < datesCells.size(); i++)
         {
-            Double day = datesCells.get(i).getEffectiveValue().getNumberValue();
-            String month = findMonthForColumn(i, columnToMonthMap);
+            int day = datesCells.get(i).getEffectiveValue().getNumberValue().intValue();
+            String month = findMonthForColumnStr(columnToDate, i);
             if (month.equalsIgnoreCase(getReportStartMonth())
-                    && day.equals((double) getReportStartDay()))
+                    && day == getReportStartDay())
             {
                 startColumn = i;
             }
 
             if (month.equalsIgnoreCase(getReportEndMonth())
-                    && day.equals((double) getReportEndDay()))
+                    && day == getReportEndDay())
             {
                 endColumn = i;
             }
+        }
+        if (endColumn == 0) {
+            endColumn = datesCells.size();
         }
         return new Pair<>(startColumn, endColumn);
     }

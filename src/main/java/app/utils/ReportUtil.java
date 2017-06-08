@@ -211,20 +211,13 @@ public class ReportUtil {
         return month;
     }
 
-    public static int findMonthForColumn(Map<String, List<Integer>> map, int c) {
-        String month = null;
-        for (Map.Entry<String, List<Integer>> entry : map.entrySet()) {
-            if (entry.getValue().contains(c)) month = entry.getKey();
-        }
-        return getMonthNumber(month);
+    public static int findMonthForColumn(Map<Integer, LocalDate> map, int c) {
+        return map.get(c).getMonth().ordinal();
     }
 
-    public static String findMonthForColumn(int c, Map<String, List<Integer>> map) {
-        String month = null;
-        for (Map.Entry<String, List<Integer>> entry : map.entrySet()) {
-            if (entry.getValue().contains(c)) month = entry.getKey();
-        }
-        return month;
+    public static String findMonthForColumnStr(Map<Integer, LocalDate> map, int c) {
+        int monthNo = map.get(c).getMonth().ordinal();
+        return Month.values()[monthNo].getName();
     }
 
     /**

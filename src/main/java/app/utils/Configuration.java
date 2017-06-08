@@ -130,7 +130,7 @@ public class Configuration {
 
         String dataFirstRow = getGroupProperty(DATA_FIRST_ROW, groupNo);
         dataFirstRow = dataFirstRow != null ? dataFirstRow
-                : String.valueOf(Integer.valueOf(rowWithMonths) + 2);
+                : String.valueOf(Integer.valueOf(rowWithMonths) + 3);
 
         String addedPeopleStr = getGroupProperty(ADDED_PEOPLE, groupNo);
 
