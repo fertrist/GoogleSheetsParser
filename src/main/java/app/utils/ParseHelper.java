@@ -27,14 +27,14 @@ public class ParseHelper {
     /**
      * Retrieves people by categories
      */
-    public static List<Person> parsePeople(GridData peopleData, Group group) {
+    public static List<Person> parsePeople(List<RowData> peopleData, Group group) {
         List<Person> people = new ArrayList<>();
 
-        int offset = Integer.valueOf(group.getDataFirstRow()) - 1;
+        int offset = group.getDataFirstRow() - 1;
 
-        for (int i = 0; i < peopleData.getRowData().size(); i++) {
+        for (int i = 0; i < peopleData.size(); i++) {
 
-            RowData r = peopleData.getRowData().get(i);
+            RowData r = peopleData.get(i);
 
             if (isRowEmpty(r)) continue;
 
@@ -94,9 +94,8 @@ public class ParseHelper {
                 || cellData.getEffectiveValue().getStringValue().isEmpty();
     }
 
-    public static Map<Actions, Color> parseColors(GridData gridData, int colorsRow) {
+    public static Map<Actions, Color> parseColors(List<RowData> rows, int colorsRow) {
         Map<Actions, Color> colors = new HashMap<>();
-        List<RowData> rows = gridData.getRowData();
         for (int j = colorsRow + 1; j < colorsRow + DATA_OVERLAP; j++) {
             RowData r = rows.get(j);
 
@@ -119,13 +118,13 @@ public class ParseHelper {
         return colors;
     }
 
-    public static Pair<Integer, Integer> getLastDataAndColorsRow(GridData gridData, int fromIndex, int offsetFromStart) {
+    public static Pair<Integer, Integer> getLastDataAndColorsRow(List<RowData> gridData, int offsetFromStart) {
         int lastDataRow = 0;
         int colorsRow = 0;
 
-        for (int i = fromIndex - 5; i < gridData.getRowData().size(); i++) {
+        for (int i = 0; i < gridData.size(); i++) {
 
-            RowData r = gridData.getRowData().get(i);
+            RowData r = gridData.get(i);
 
             if (isRowEmpty(r) || isCellEmpty(r.getValues().get(1))) continue;
 
@@ -139,51 +138,21 @@ public class ParseHelper {
         return new Pair<>(lastDataRow + offsetFromStart, colorsRow + offsetFromStart);
     }
 
-    public static Map<Integer, LocalDate> getColumnToDateMap(List<CellData> monthsCells, List<CellData> datesCells) {
-        String month = "";
+    public static Map<Integer, LocalDate> getColumnToDateMap(Map<String, Pair<Integer, Integer>> monthLimits,
+                                                             List<CellData> datesCells) {
 
         Map<Integer, LocalDate> columnToDateMap = new HashMap<>();
         int currentYear = LocalDate.now().getYear();
-        for (int i = 0; i < datesCells.size(); i++)
-        {
-            int monthIndex = Math.min(i, monthsCells.size() - 1);
-            int dayOfMonth = datesCells.get(i).getEffectiveValue().getNumberValue().intValue();
 
-            String newMonth = getMonthFromString(monthsCells.get(monthIndex).getEffectiveValue() != null
-                    ? monthsCells.get(monthIndex).getEffectiveValue().getStringValue().toLowerCase() : month);
-
-            if (!newMonth.equals(month))
-            {
-                month = newMonth;
+        for (String month : monthLimits.keySet()) {
+            Pair<Integer, Integer> limit = monthLimits.get(month);
+            for (int i = limit.getKey(); i < limit.getValue(); i++) {
+                int dayOfMonth = datesCells.get(i-1).getEffectiveValue().getNumberValue().intValue();
+                columnToDateMap.put(i, LocalDate.of(currentYear, getMonthNumber(month), dayOfMonth));
             }
-            columnToDateMap.put(i, LocalDate.of(currentYear, getMonthNumber(month), dayOfMonth));
         }
+
         return columnToDateMap;
     }
 
-    public static Pair<Integer, Integer> getStartEndColumns(Map<Integer, LocalDate> columnToDate,
-                                                            List<CellData> datesCells) {
-        int startColumn = 0;
-        int endColumn = 0;
-        for (int i = 0; i < datesCells.size(); i++)
-        {
-            int day = datesCells.get(i).getEffectiveValue().getNumberValue().intValue();
-            String month = findMonthForColumn(columnToDate, i);
-            if (month.equalsIgnoreCase(getReportStartMonth())
-                    && day == getReportStartDay())
-            {
-                startColumn = i;
-            }
-
-            if (month.equalsIgnoreCase(getReportEndMonth())
-                    && day == getReportEndDay())
-            {
-                endColumn = i;
-            }
-        }
-        if (endColumn == 0) {
-            endColumn = datesCells.size() - 1;
-        }
-        return new Pair<>(startColumn, endColumn);
-    }
 }

@@ -9,9 +9,9 @@ public class Group implements Comparable<Group> {
     private int groupNumber;
     private String spreadSheetId;
     private String leaderName;
-    private String rowWithMonths;
+    private int rowWithMonths;
     private String groupDay;
-    private String dataFirstRow;
+    private int dataFirstRow;
     private String peopleColumn;
     private List<String> addedPeople;
     private List<String> removedPeople;
@@ -40,9 +40,9 @@ public class Group implements Comparable<Group> {
         private int groupNumber;
         private String spreadSheetId;
         private String leaderName;
-        private String rowWithMonths;
+        private int rowWithMonths;
         private String groupDay;
-        private String dataFirstRow;
+        private int dataFirstRow;
         private String peopleColumn;
         private List<String> addedPeople;
         private List<String> removedPeople;
@@ -63,7 +63,7 @@ public class Group implements Comparable<Group> {
         }
 
         public Builder monthsRow(String monthsRow) {
-            this.rowWithMonths = monthsRow;
+            this.rowWithMonths = Integer.valueOf(monthsRow);
             return this;
         }
 
@@ -73,7 +73,7 @@ public class Group implements Comparable<Group> {
         }
 
         public Builder dataStartRow(String dataStartRow) {
-            this.dataFirstRow = dataStartRow;
+            this.dataFirstRow = Integer.valueOf(dataStartRow);
             return this;
         }
 
@@ -105,7 +105,7 @@ public class Group implements Comparable<Group> {
         return leaderName;
     }
 
-    public String getRowWithMonths() {
+    public int getRowWithMonths() {
         return rowWithMonths;
     }
 
@@ -113,7 +113,7 @@ public class Group implements Comparable<Group> {
         return groupDay;
     }
 
-    public String getDataFirstRow() {
+    public int getDataFirstRow() {
         return dataFirstRow;
     }
 
