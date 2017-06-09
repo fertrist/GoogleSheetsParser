@@ -103,9 +103,9 @@ public class ReportProcessor extends SheetsApp {
 
 
         // parse people and colors
-        String endColumn = String.valueOf(group.getPeopleColumn().toCharArray()[0] + 1);
+        String numberColumn = String.valueOf((char) (group.getPeopleColumn().toCharArray()[0] - 1));
         List<RowData> peopleColorRows = sheetApi
-                .getRowsData(spreadsheetId, group.getDataFirstRow(), MAX_ROWS, group.getPeopleColumn(), endColumn);
+                .getRowsData(spreadsheetId, group.getDataFirstRow(), MAX_ROWS, numberColumn, group.getPeopleColumn());
 
         List<Person> people = parsePeople(peopleColorRows, group);
 
@@ -148,7 +148,7 @@ public class ReportProcessor extends SheetsApp {
             String monthName = monthCells.get(mergeStartIndex).getEffectiveValue().getStringValue();
             monthName = getMonthFromString(monthName);
 
-            monthsMap.put(monthName, new Pair<>(merge.getStartColumnIndex()+1, merge.getEndColumnIndex()+1));
+            monthsMap.put(monthName, new Pair<>(merge.getStartColumnIndex()+1, merge.getEndColumnIndex()));
         }
         return monthsMap;
     }
@@ -173,14 +173,17 @@ public class ReportProcessor extends SheetsApp {
             if (month.equals(getReportEndMonth())) {
                 endColumn = getColumnForReportEndDay(dateCells, limit.getKey(), limit.getValue());
             }
-
-            // if start or end month is missed, use what we have
-            if (startColumn == 0)
-                startColumn = Math.max(startColumn, limit.getKey());
-
-            if (endColumn == 0)
-                endColumn = Math.min(endColumn, limit.getValue());
         }
+        // if start or end month is missed, use what we have
+
+        List<Pair<Integer, Integer>> limits = new ArrayList<>(monthLimits.values());
+
+        if (startColumn == 0)
+            startColumn = limits.get(0).getKey();
+
+        if (endColumn == 0)
+            endColumn = limits.get(limits.size()-1).getValue();
+
         return new Pair<>(startColumn, endColumn);
     }
 
@@ -261,7 +264,8 @@ public class ReportProcessor extends SheetsApp {
         {
             List<CellData> personCells = dataRows.get(person.getIndex()).getValues();
             if (personCells == null || personCells.isEmpty()) continue;
-            for (int i = startEndColumns.getKey(); i < Math.min(personCells.size(), startEndColumns.getValue()); i++)
+            int diff = startEndColumns.getValue() - startEndColumns.getKey();
+            for (int i = 0; i < Math.min(personCells.size(), diff); i++)
             {
                 CellData cell = personCells.get(i);
                 if (cell.getEffectiveFormat() == null
@@ -271,7 +275,7 @@ public class ReportProcessor extends SheetsApp {
                 Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
                 Actions action = getActionByColor(bgColor, colors);
                 if (action != null) {
-                    items.add(new Item(person.clone(), action, columnToDateMap.get(i)));
+                    items.add(new Item(person.clone(), action, columnToDateMap.get(i + startEndColumns.getKey())));
                 }
             }
         }

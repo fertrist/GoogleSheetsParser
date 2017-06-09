@@ -35,6 +35,8 @@ public class CustomSheetApi {
         String end = endColumn + endRow;
         String dataRange = start + ":" + end;
 
+        System.out.println("Fetching data : " + dataRange);
+
         Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
                 .setRanges(Collections.singletonList(dataRange)).setIncludeGridData(true).execute();
 
@@ -47,6 +49,8 @@ public class CustomSheetApi {
 
         String end = columnToLetter(endColumn) + endRow;
         String dataRange = start + ":" + end;
+
+        System.out.println("Fetching data : " + dataRange);
 
         Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
                 .setRanges(Collections.singletonList(dataRange)).setIncludeGridData(true).execute();

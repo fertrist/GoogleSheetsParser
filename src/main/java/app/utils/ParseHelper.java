@@ -146,7 +146,7 @@ public class ParseHelper {
 
         for (String month : monthLimits.keySet()) {
             Pair<Integer, Integer> limit = monthLimits.get(month);
-            for (int i = limit.getKey(); i < limit.getValue(); i++) {
+            for (int i = limit.getKey(); i <= limit.getValue(); i++) {
                 int dayOfMonth = datesCells.get(i-1).getEffectiveValue().getNumberValue().intValue();
                 columnToDateMap.put(i, LocalDate.of(currentYear, getMonthNumber(month), dayOfMonth));
             }
