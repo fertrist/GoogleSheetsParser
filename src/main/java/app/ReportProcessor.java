@@ -1,5 +1,6 @@
 package app;
 
+import app.data.DataRetriever;
 import app.entities.*;
 import app.enums.Category;
 import app.enums.Actions;
@@ -34,9 +35,15 @@ public class ReportProcessor extends SheetsApp {
 
     private static final int MAX_ROWS = 120;
 
+    private static DataRetriever retriever;
+
     public static void main(String[] args) throws IOException {
         Sheets service = getSheetsService();
+        retriever = new DataRetriever(service);
+        process(service);
+    }
 
+    private static void process(Sheets service) throws IOException {
         String[] regionNumbers = getProperty(REGIONS).split(",");
         List<Region> regions = new ArrayList<>();
         for (String regionNumber : regionNumbers){
