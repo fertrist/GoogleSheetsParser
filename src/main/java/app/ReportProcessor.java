@@ -80,6 +80,9 @@ public class ReportProcessor extends SheetsApp {
         //get moths and rough start end columns
         Sheet sheet = spreadsheet.getSheets().get(0); //sheet object required to get merged cells
 
+
+        Pair<Integer, Integer> exactColumnsForReport = getColumnsForReport(service, group);
+
         List<Person> people = parsePeople(sheet.getData().get(1), group);
 
         Pair<Integer, Integer> rows = getLastDataAndColorsRow(sheet.getData().get(1), people.size() + dataOffset, dataOffset);
@@ -118,6 +121,120 @@ public class ReportProcessor extends SheetsApp {
 
         return weeks;
 
+    }
+
+    private static Pair<Integer, Integer> getColumnsForReport(Sheets service, Group group) throws IOException {
+        String spreadsheetId = group.getSpreadSheetId();
+
+        String monthsRange = group.getRowWithMonths() + ":" + (Integer.valueOf(group.getDataFirstRow())-1);
+
+        Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
+                .setRanges(Collections.singletonList(monthsRange)).setIncludeGridData(true).execute();
+
+        //get moths and rough start end columns
+        Sheet sheet = spreadsheet.getSheets().get(0); //sheet object required to get merged cells
+
+        Pair<Integer, Integer> exactColumns = getExactColumnsForReportData(sheet);
+        System.out.printf("roughColumnsRange : [%s : %s] %n",
+                columnToLetter(exactColumns.getKey()), columnToLetter(exactColumns.getValue()));
+
+        return exactColumns;
+    }
+
+    /**
+     * Get raw, approximate, rough range of columns to work with (to avoid parsing old columns)
+     */
+    private static Pair<Integer, Integer> getExactColumnsForReportData(Sheet monthsSheet) {
+
+        RowData monthsRow = monthsSheet.getData().get(0).getRowData().get(0);
+        List<CellData> monthCells = monthsRow.getValues();
+
+        RowData datesRow = monthsSheet.getData().get(0).getRowData().get(2);
+        List<CellData> dateCells = datesRow.getValues();
+
+        List<GridRange> merges = monthsSheet.getMerges();
+        merges.sort((Comparator.comparing(GridRange::getStartColumnIndex)));
+
+        //sort and map merges to start end indexes
+        Map<String, Pair<Integer, Integer>> monthsMap = new HashMap<>();
+        for (GridRange merge : merges) {
+
+            int startIndex = merge.getStartColumnIndex();
+
+            if (monthCells.get(startIndex).getEffectiveValue() == null) continue;
+
+            String monthName = monthCells.get(startIndex).getEffectiveValue().getStringValue();
+            monthName = getMonthFromString(monthName);
+
+            monthsMap.put(monthName, new Pair<>(merge.getStartColumnIndex(), merge.getEndColumnIndex()));
+        }
+
+        List<String> coveredMonths = getCoveredMonths().stream()
+                .filter(m -> monthsMap.get(m) != null).collect(Collectors.toList());
+
+        // validate months are recent and really are covered
+        ListIterator<String> iterator = coveredMonths.listIterator();
+        int previousEnd = 0;
+        while (iterator.hasNext()) {
+            String nextMonth = iterator.next();
+            int nextStart = monthsMap.get(nextMonth).getKey();
+            if (nextStart < previousEnd) {
+                iterator.remove();
+            } else {
+                previousEnd = monthsMap.get(nextMonth).getValue();
+            }
+        }
+
+        // define start/end
+        int startColumn = 0;
+        int endColumn = 0;
+
+        for (String month : coveredMonths) {
+
+            if (monthsMap.get(month) == null) continue;
+
+            Pair<Integer, Integer> monthLimits = monthsMap.get(month);
+
+            if (month.equals(getReportStartMonth())) {
+                startColumn = getColumnForReportStartDay(dateCells, monthLimits.getKey(), monthLimits.getValue());
+            }
+            if (month.equals(getReportEndMonth())) {
+                endColumn = getColumnForReportEndDay(dateCells, monthLimits.getKey(), monthLimits.getValue());
+            }
+        }
+
+        // if start or end month is missed, use what we have
+        if (startColumn == 0)
+            startColumn = monthsMap.get(coveredMonths.get(0)).getKey();
+
+        if (endColumn == 0)
+            endColumn = monthsMap.get(coveredMonths.get(coveredMonths.size()-1)).getValue();
+
+        return new Pair<>(startColumn, endColumn);
+    }
+
+    private static int getColumnForReportStartDay(List<CellData> dateCells, int start, int end) {
+        int dateCellIndex = start;
+        while (dateCellIndex < end) {
+            int day = dateCells.get(dateCellIndex).getEffectiveValue().getNumberValue().intValue();
+            if (day == getReportStartDay()) {
+                break;
+            }
+            dateCellIndex++;
+        }
+        return dateCellIndex + 1; // column starts from 1, while list indexing from 0
+    }
+
+    private static int getColumnForReportEndDay(List<CellData> dateCells, int start, int end) {
+        int dateCellIndex = end - 1;
+        while (dateCellIndex >= start) {
+            int day = dateCells.get(dateCellIndex).getEffectiveValue().getNumberValue().intValue();
+            if (day == getReportEndDay()) {
+                break;
+            }
+            dateCellIndex--;
+        }
+        return dateCellIndex + 1; // column starts from 1, while list indexing from 0
     }
 
     private static void handleAddedRemovedToList(List<Week> weeks, Group group, List<Person> people) {
@@ -320,15 +437,15 @@ public class ReportProcessor extends SheetsApp {
         LocalDate reportStartDate = LocalDate.parse(getReportStartDate());
         LocalDate reportEndDate = LocalDate.parse(getReportEndDate());
 
-        Set<String> months = new HashSet<>();
+        Set<String> months = new LinkedHashSet<>(); // order is important here
 
         for (LocalDate tmp = reportStartDate; tmp.isBefore(reportEndDate) || tmp.isEqual(reportEndDate);
              tmp = tmp.plusDays(1))
         {
             Month[] values = Month.values();
-            int ordinal = tmp.getMonth().ordinal();
-            months.add(values[ordinal].getName());
+            months.add(values[tmp.getMonthValue() - 1].getName());
         }
+
         return new ArrayList<>(months);
     }
 
