@@ -1,20 +1,38 @@
 package app.utils;
 
 import app.entities.Person;
+import app.entities.Week;
 import app.enums.Actions;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;
 import com.google.api.services.sheets.v4.model.ExtendedValue;
+import com.google.api.services.sheets.v4.model.RowData;
 import com.sun.deploy.util.StringUtils;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ReportUtil {
+
+    public static boolean isRowEmpty(RowData r) {
+        return r == null || r.getValues() == null;
+    }
+
+    public static List<Week> getWeeksFromDates(LocalDate start, LocalDate end) {
+        List<Week> weeks = new ArrayList<>();
+        for (LocalDate tmp = start; tmp.isBefore(end) || tmp.isEqual(end); tmp = tmp.plusWeeks(1)) {
+            Week week = new Week();
+            week.setStart(tmp);
+            week.setEnd(start.plusDays(6));
+            weeks.add(week);
+        }
+        return weeks;
+    }
 
     public enum Month {
         JAN("январь"), FEB("февраль"), MAR("март"),
@@ -209,11 +227,6 @@ public class ReportUtil {
             }
         }
         return month;
-    }
-
-    public static String findMonthForColumn(Map<Integer, LocalDate> map, int c) {
-        int monthNo = map.get(c).getMonthValue();
-        return Month.values()[monthNo-1].getName();
     }
 
     /**

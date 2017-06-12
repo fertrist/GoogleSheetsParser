@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static app.utils.Configuration.*;
 import static app.utils.ReportUtil.*;
 
 /**
@@ -74,10 +73,6 @@ public class ParseHelper {
         }
 
         return category;
-    }
-
-    private static boolean isRowEmpty(RowData r) {
-        return r == null || r.getValues() == null;
     }
 
     private static boolean isColorsTitle(CellData cellData) {
