@@ -5,6 +5,7 @@ import app.entities.*;
 import app.enums.Category;
 import app.enums.Actions;
 import app.utils.Configuration;
+import app.utils.ReportUtil;
 import app.utils.SheetsApp;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
@@ -74,6 +75,7 @@ public class ReportProcessor extends SheetsApp {
 
     private static List<Week> processGroup(Group group) throws IOException {
         // get start end columns for report
+        System.out.println("Processing " + group.getLeaderName() + "'s group.");
 
         String spreadsheetId = group.getSpreadSheetId();
 
@@ -94,16 +96,16 @@ public class ReportProcessor extends SheetsApp {
         monthLimits = new LinkedHashMap<>(monthLimits.entrySet().stream().filter(e -> coveredMonths.contains(e.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
-        Pair<Integer, Integer> exactColumns = getExactColumnsForReportData(dateCells, monthLimits);
+        Pair<Integer, Integer> reportColumns = getExactColumnsForReportData(dateCells, monthLimits);
 
-        Map<Integer, LocalDate> columnToDateMap = getColumnToDateMap(monthLimits, dateCells);
+        System.out.printf("Columns Range : [%s : %s] %n",
+                columnToLetter(reportColumns.getKey()), columnToLetter(reportColumns.getValue()));
 
-        System.out.printf("roughColumnsRange : [%s : %s] %n",
-                columnToLetter(exactColumns.getKey()), columnToLetter(exactColumns.getValue()));
-
+        Map<Integer, LocalDate> columnToDateMap = getColumnToDateMap(monthLimits, reportColumns, dateCells);
 
         // parse people and colors
         String numberColumn = String.valueOf((char) (group.getPeopleColumn().toCharArray()[0] - 1));
+
         List<RowData> peopleColorRows = sheetApi
                 .getRowsData(spreadsheetId, group.getDataFirstRow(), MAX_ROWS, numberColumn, group.getPeopleColumn());
 
@@ -111,28 +113,26 @@ public class ReportProcessor extends SheetsApp {
 
         int dataOffset = group.getDataFirstRow();
 
-        Pair<Integer, Integer> rowsLimit = getLastDataAndColorsRow(peopleColorRows, dataOffset);
-        int lastDataRow = rowsLimit.getKey();
-        int colorsRow = rowsLimit.getValue();
+        Pair<Integer, Integer> dataColorRows = getLastDataAndColorsRow(peopleColorRows, dataOffset);
+        int lastDataRow = dataColorRows.getKey();
+        int colorsRow = dataColorRows.getValue();
 
         Map<Actions, Color> colors = parseColors(peopleColorRows, colorsRow - dataOffset);
 
 
         // get data and parse it
         List<RowData> data = sheetApi.getRowsData(spreadsheetId,
-                group.getRowWithMonths(), lastDataRow, exactColumns.getKey(), exactColumns.getValue());
+                group.getRowWithMonths(), lastDataRow, reportColumns.getKey(), reportColumns.getValue());
 
-        List<Item> items = getItems(people, colors, exactColumns, data, columnToDateMap);
+        List<Item> items = getItems(people, colors, reportColumns, data, columnToDateMap);
 
-        List<Week> weeks = getWeeks(data, exactColumns, columnToDateMap, group, colors);
-        // TODO test new getWeeks method
+        List<Week> weeks = getWeeks(data, Integer.valueOf(group.getGroupDay()), columnToDateMap, colors.get(GROUP));
 
         weeks = fillWeeks(items, people, weeks);
 
         handleAddedRemovedToList(weeks, group, people);
 
         return weeks;
-
     }
 
     private static Map<String, Pair<Integer, Integer>> getMonthLimits(List<GridRange> merges, List<CellData> monthCells) {
@@ -256,52 +256,43 @@ public class ReportProcessor extends SheetsApp {
         return (date.isAfter(start) || date.isEqual(start)) && (date.isBefore(end) || date.isEqual(end));
     }
 
-    private static List<Item> getItems(
-            List<Person> people, Map<Actions, Color> colors, Pair<Integer, Integer> startEndColumns,
+    private static List<Item> getItems(List<Person> people, Map<Actions, Color> colors,
+                                       Pair<Integer, Integer> startEndColumns,
             List<RowData> dataRows, Map<Integer, LocalDate> columnToDateMap)
     {
         List<Item> items = new ArrayList<>();
         for (Person person : people)
         {
-            List<CellData> personCells = dataRows.get(person.getIndex()).getValues();
-            if (personCells == null || personCells.isEmpty()) continue;
+            RowData row = dataRows.get(person.getIndex());
+
+            if (isRowEmpty(row)) continue;
+
             int diff = startEndColumns.getValue() - startEndColumns.getKey();
-            for (int i = 0; i < Math.min(personCells.size(), diff); i++)
+
+            List<CellData> personCells = row.getValues().subList(0, diff).stream().filter(ReportUtil::hasBackground)
+                    .collect(Collectors.toList());
+
+            for (int i = 0; i < personCells.size(); i++)
             {
                 CellData cell = personCells.get(i);
-                if (cell.getEffectiveFormat() == null
-                        || cell.getEffectiveFormat().getBackgroundColor() == null) {
-                    continue;
-                }
+
                 Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
+
+                LocalDate date = columnToDateMap.get(i);
+
                 Actions action = getActionByColor(bgColor, colors);
                 if (action != null) {
-                    items.add(new Item(person.clone(), action, columnToDateMap.get(i + startEndColumns.getKey())));
+                    items.add(new Item(person.clone(), action, date));
                 }
             }
         }
         return items;
     }
 
-    private static List<Week> getWeeks(List<RowData> rows, Group group, Map<Integer, LocalDate> columnToDateMap,
+    private static List<Week> getWeeks(List<RowData> rows, Integer groupDay, Map<Integer, LocalDate> columnToDateMap,
                                        Color groupColor) {
         LocalDate reportStart = LocalDate.parse(getReportStartDate());
         LocalDate reportEnd = LocalDate.parse(getReportEndDate());
-
-        List<Week> weeks = getWeeksFromDates(reportStart, reportEnd);
-
-        for (Week week : weeks) {
-            Integer groupDay = Integer.valueOf(group.getGroupDay());
-            LocalDate groupDate = week.getStart().plusDays(groupDay - 1);
-
-            setWeekComments(week, rows, columnToDateMap, groupDate, groupColor);
-        }
-
-        return weeks;
-    }
-
-    private static void setWeekComments(Week week, List<RowData> rows, Map<Integer, LocalDate> columnToDateMap,
-                                         LocalDate groupDate, Color groupColor) {
 
         RowData daysRow = rows.get(1);
         List<CellData> daysCells = daysRow.getValues();
@@ -309,15 +300,27 @@ public class ReportProcessor extends SheetsApp {
         RowData datesRow = rows.get(2);
         List<CellData> datesCells = datesRow.getValues();
 
-        Integer[] groupDayColumns = getGroupDayColumns(groupDate, columnToDateMap);
-        int groupColumn  = getGroupDayColumn(groupDayColumns, rows, groupColor);
+        List<Week> weeks = getWeeksFromDates(reportStart, reportEnd);
 
-        CellData dayCell = daysCells.get(groupColumn);
-        CellData dateCell = datesCells.get(groupColumn);
+        for (Week week : weeks) {
 
-        String groupNote = dayCell.getNote();
+            LocalDate groupDate = week.getStart().plusDays(groupDay - 1);
 
-        setGroupComments(week, daysCells.get(groupColumn), datesCells.get(groupColumn));
+            Integer[] groupDayColumns = getGroupDayColumns(groupDate, columnToDateMap);
+
+            int groupColumn = getGroupDayColumn(groupDayColumns, rows, groupColor);
+
+            if (groupColumn == -1) continue;
+
+            CellData dayCell = daysCells.get(groupColumn);
+            CellData dateCell = datesCells.get(groupColumn);
+
+            String groupNote = dayCell.getNote();
+            groupNote = groupNote != null ? groupNote : dateCell.getNote();
+
+            setGroupComments(week, groupNote);
+        }
+        return weeks;
     }
 
     private static int getGroupDayColumn(Integer [] groupDayColumns, List<RowData> rows, Color groupColor) {
@@ -326,13 +329,17 @@ public class ReportProcessor extends SheetsApp {
             if (isRowEmpty(row)) continue;
 
             for (int column : groupDayColumns) {
+                if (column > row.getValues().size()) continue;
+
                 CellData cell = row.getValues().get(column);
+
+                if (!hasBackground(cell)) continue;
+
                 Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
                 if (areColorsEqual(bgColor, groupColor)) {
                     return column;
                 }
             }
-
         }
         return -1;
     }
@@ -348,77 +355,7 @@ public class ReportProcessor extends SheetsApp {
         return columns.toArray(new Integer[columns.size()]);
     }
 
-    private static List<Week> getWeeks(List<RowData> dataRows, Pair<Integer, Integer> startEndColumn,
-                                       Map<Integer, LocalDate> columnToDateMap, Group group, Map<Actions, Color> colors) {
-        int dataFirstRow = group.getDataFirstRow();
-        dataFirstRow--; // offset because of indexing
-        String groupWeekDay = getWeekDay(Integer.valueOf(group.getGroupDay()));
-
-        RowData daysRow = dataRows.get(1);
-        List<CellData> daysCells = daysRow.getValues();
-
-        RowData datesRow = dataRows.get(2);
-        List<CellData> datesCells = datesRow.getValues();
-
-        List<Week> weeks = new ArrayList<>();
-
-        int diff = startEndColumn.getValue() - startEndColumn.getKey();
-
-        for (int weekIndex = 0; weekIndex < diff; weekIndex++)
-        {
-            int dayIndex = weekIndex - 1;
-            int groupDayIndex = 0;
-            String weekDay;
-            do {
-                dayIndex++;
-                weekDay = daysCells.get(dayIndex).getEffectiveValue().getStringValue();
-                if (weekDay.equalsIgnoreCase(groupWeekDay))
-                {
-                    for (int i = dataFirstRow; i < dataRows.size(); i++) {
-                        RowData personRow = dataRows.get(i);
-                        if (personRow.size() == 0 ) continue;
-                        CellData cell = personRow.getValues().get(dayIndex);
-                        int index = defineIsAGroupIndex(weekDay, groupWeekDay, cell, colors.get(GROUP), dayIndex);
-                        groupDayIndex = index == 0 ? groupDayIndex : index;
-                    }
-                }
-            } while (!weekDay.equalsIgnoreCase("вс") && dayIndex < (datesCells.size() - 1));
-
-            Week week = new Week();
-            week.setStart(columnToDateMap.get(startEndColumn.getKey() + weekIndex));
-
-            setGroupComments(week, daysCells.get(groupDayIndex), datesCells.get(groupDayIndex));
-
-            weekIndex += (dayIndex - weekIndex);
-
-            week.setEnd(columnToDateMap.get(startEndColumn.getKey() + weekIndex));
-
-            weeks.add(week);
-        }
-        return weeks;
-    }
-
-    private static int defineIsAGroupIndex(String weekDay, String groupWeekDay, CellData cell, Color groupColor, int index) {
-
-        if (weekDay.equalsIgnoreCase(groupWeekDay)) {
-            if (cell.getEffectiveFormat() == null
-                    || cell.getEffectiveFormat().getBackgroundColor() == null){
-                return 0;
-            }
-            Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
-            boolean personWasPresentInGroup = areColorsEqual(bgColor, groupColor);
-            if (personWasPresentInGroup)
-            {
-                return index;
-            }
-        }
-        return 0;
-    }
-
-    private static void setGroupComments(Week week, CellData dayCell, CellData dateCell) {
-
-        String groupNote = dayCell.getNote();
-        groupNote = groupNote != null ? groupNote : dateCell.getNote();
+    private static void setGroupComments(Week week, String groupNote) {
 
         if (groupNote != null && !groupNote.isEmpty()) {
             String firstString = groupNote.split("\\n")[0];

@@ -129,7 +129,7 @@ public class ReportHelper {
 
         CellData leader = getCellWithValue(group.getLeaderName());
         CellData weekName = getCellWithValue(ReportUtil.getDayMonth(week.getStart())
-                + " -   " + ReportUtil.getDayMonth(week.getEnd()));
+                + " - " + ReportUtil.getDayMonth(week.getEnd()));
         CellData presentTotal = getCellWithValue(week.getTotalCount());
         CellData listWhite = getCellWithValue(week.getWhiteList().size());
         if (lastWeek) {

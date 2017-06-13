@@ -91,7 +91,7 @@ public class ParseHelper {
 
     public static Map<Actions, Color> parseColors(List<RowData> rows, int colorsRow) {
         Map<Actions, Color> colors = new HashMap<>();
-        for (int j = colorsRow + 1; j < colorsRow + DATA_OVERLAP; j++) {
+        for (int j = colorsRow + 1; j < Math.min(colorsRow + DATA_OVERLAP, rows.size()); j++) {
             RowData r = rows.get(j);
 
             if (isRowEmpty(r)) continue;
@@ -134,16 +134,23 @@ public class ParseHelper {
     }
 
     public static Map<Integer, LocalDate> getColumnToDateMap(Map<String, Pair<Integer, Integer>> monthLimits,
+                                                             Pair<Integer, Integer> reportLimits,
                                                              List<CellData> datesCells) {
 
         Map<Integer, LocalDate> columnToDateMap = new HashMap<>();
         int currentYear = LocalDate.now().getYear();
 
         for (String month : monthLimits.keySet()) {
+
             Pair<Integer, Integer> limit = monthLimits.get(month);
+            if (limit.getKey() > reportLimits.getValue()
+                    || limit.getValue() < reportLimits.getKey()) continue;
+
             for (int i = limit.getKey(); i <= limit.getValue(); i++) {
+                if (i < reportLimits.getKey() || i > reportLimits.getValue()) continue;
+
                 int dayOfMonth = datesCells.get(i-1).getEffectiveValue().getNumberValue().intValue();
-                columnToDateMap.put(i, LocalDate.of(currentYear, getMonthNumber(month), dayOfMonth));
+                columnToDateMap.put(i - reportLimits.getKey(), LocalDate.of(currentYear, getMonthNumber(month), dayOfMonth));
             }
         }
 

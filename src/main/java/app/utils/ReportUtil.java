@@ -28,7 +28,7 @@ public class ReportUtil {
         for (LocalDate tmp = start; tmp.isBefore(end) || tmp.isEqual(end); tmp = tmp.plusWeeks(1)) {
             Week week = new Week();
             week.setStart(tmp);
-            week.setEnd(start.plusDays(6));
+            week.setEnd(tmp.plusDays(6));
             weeks.add(week);
         }
         return weeks;
@@ -260,5 +260,10 @@ public class ReportUtil {
 
     public static String getDayMonth(LocalDate localDate) {
         return String.format("%02d.%02d", localDate.getDayOfMonth(), localDate.getMonthValue());
+    }
+
+    public static boolean hasBackground(CellData cell) {
+        return cell.getEffectiveFormat() != null
+                && cell.getEffectiveFormat().getBackgroundColor() != null;
     }
 }
