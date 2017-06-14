@@ -35,6 +35,7 @@ public class Configuration {
     public static final String DATA_FIRST_ROW = "data.first.row";
     public static final String PEOPLE_COLUMN = "people.column";
     public static final String ADDED_PEOPLE = "added.people";
+    public static final String HAS_STAGES = "has.stages";
     public static final String REMOVED_PEOPLE = "removed.people";
     public static final String GROUPS = "groups";
 
@@ -122,15 +123,24 @@ public class Configuration {
         String groupDay = getGroupProperty(GROUP_DAY, groupNo);
         groupDay = groupDay == null ? getProperty(DEFAULT_GROUP_DAY) : groupDay;
 
-        String rowWithMonths = getGroupProperty(ROW_WITH_MONTHS, groupNo);
-        rowWithMonths = rowWithMonths == null ? getProperty(DEFAULT_ROW_WITH_MONTHS) : rowWithMonths;
+        String rowWithMonthsStr = getGroupProperty(ROW_WITH_MONTHS, groupNo);
+        rowWithMonthsStr = rowWithMonthsStr == null ? getProperty(DEFAULT_ROW_WITH_MONTHS) : rowWithMonthsStr;
+
+        int rowWithMonths = Integer.valueOf(rowWithMonthsStr);
+
+        boolean hasStages = Boolean.valueOf(getGroupProperty(HAS_STAGES, groupNo));
+
+        int stagesOffset = hasStages ? 1 : 0;
+
+        int rowWithDays = rowWithMonths + stagesOffset + 1;
+
+        int rowWithDates = rowWithDays + 1;
+
+        String dataFirstRowStr = getGroupProperty(DATA_FIRST_ROW, groupNo);
+        int dataFirstRow = dataFirstRowStr != null ? Integer.valueOf(dataFirstRowStr) : rowWithDates + 1;
 
         String peopleColumn = getGroupProperty(PEOPLE_COLUMN, groupNo);
         peopleColumn = peopleColumn == null ? getProperty(DEFAULT_PEOPLE_COLUMN) : peopleColumn;
-
-        String dataFirstRow = getGroupProperty(DATA_FIRST_ROW, groupNo);
-        dataFirstRow = dataFirstRow != null ? dataFirstRow
-                : String.valueOf(Integer.valueOf(rowWithMonths) + 3);
 
         String addedPeopleStr = getGroupProperty(ADDED_PEOPLE, groupNo);
 
@@ -145,6 +155,8 @@ public class Configuration {
                 .leaderName(leaderName)
                 .groupDay(groupDay)
                 .monthsRow(rowWithMonths)
+                .rowWithDates(rowWithDates)
+                .rowWithDays(rowWithDays)
                 .peopleColumn(peopleColumn)
                 .dataStartRow(dataFirstRow)
                 .addedPeople(addedPeople)

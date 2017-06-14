@@ -10,6 +10,8 @@ public class Group implements Comparable<Group> {
     private String spreadSheetId;
     private String leaderName;
     private int rowWithMonths;
+    private int rowWithDates;
+    private int rowWithDays;
     private String groupDay;
     private int dataFirstRow;
     private String peopleColumn;
@@ -21,6 +23,8 @@ public class Group implements Comparable<Group> {
         this.spreadSheetId = builder.spreadSheetId;
         this.leaderName = builder.leaderName;
         this.rowWithMonths = builder.rowWithMonths;
+        this.rowWithDates = builder.rowWithDates;
+        this.rowWithDays = builder.rowWithDays;
         this.groupDay = builder.groupDay;
         this.dataFirstRow = builder.dataFirstRow;
         this.peopleColumn = builder.peopleColumn;
@@ -41,6 +45,8 @@ public class Group implements Comparable<Group> {
         private String spreadSheetId;
         private String leaderName;
         private int rowWithMonths;
+        private int rowWithDates;
+        private int rowWithDays;
         private String groupDay;
         private int dataFirstRow;
         private String peopleColumn;
@@ -62,8 +68,18 @@ public class Group implements Comparable<Group> {
             return this;
         }
 
-        public Builder monthsRow(String monthsRow) {
-            this.rowWithMonths = Integer.valueOf(monthsRow);
+        public Builder monthsRow(int monthsRow) {
+            this.rowWithMonths = monthsRow;
+            return this;
+        }
+
+        public Builder rowWithDates(int rowWithDates) {
+            this.rowWithDates = rowWithDates;
+            return this;
+        }
+
+        public Builder rowWithDays(int rowWithDays) {
+            this.rowWithDays = rowWithDays;
             return this;
         }
 
@@ -72,8 +88,8 @@ public class Group implements Comparable<Group> {
             return this;
         }
 
-        public Builder dataStartRow(String dataStartRow) {
-            this.dataFirstRow = Integer.valueOf(dataStartRow);
+        public Builder dataStartRow(int dataStartRow) {
+            this.dataFirstRow = dataStartRow;
             return this;
         }
 
@@ -136,9 +152,13 @@ public class Group implements Comparable<Group> {
                 .add("spreadSheetId", spreadSheetId)
                 .add("leaderName", leaderName)
                 .add("rowWithMonths", rowWithMonths)
+                .add("rowWithDates", rowWithDates)
+                .add("rowWithDays", rowWithDays)
                 .add("groupDay", groupDay)
                 .add("dataFirstRow", dataFirstRow)
                 .add("peopleColumn", peopleColumn)
+                .add("addedPeople", addedPeople)
+                .add("removedPeople", removedPeople)
                 .toString();
     }
 }
