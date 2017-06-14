@@ -124,11 +124,14 @@ public class ReportUtil {
     }
 
     public static boolean isWhite(Color color) {
-        return color.getBlue() == 1.0 && color.getGreen() == 1.0 && color.getRed() == 1.0;
+        return color != null && color.getBlue() != null && color.getBlue() == 1.0
+                && color.getGreen() != null && color.getGreen() == 1.0
+                && color.getRed() != null && color.getRed() == 1.0;
     }
 
     public static boolean isGrey(Color color) {
-        return !isWhite(color) && color.getBlue().equals(color.getGreen()) && color.getGreen().equals(color.getRed());
+        return !isWhite(color) && color.getBlue() != null && color.getGreen() != null && color.getRed() != null
+                && color.getBlue().equals(color.getGreen()) && color.getGreen().equals(color.getRed());
     }
 
     public static String columnToLetter(int column) {

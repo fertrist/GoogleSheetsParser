@@ -36,8 +36,9 @@ public class ParseHelper {
             RowData r = peopleData.get(i);
 
             if (isRowEmpty(r)) continue;
+            if (r.getValues().size() < 2) continue; // should be at least 2 columns
 
-            CellData cellData = r.getValues().get(1); // column with people names
+            CellData cellData = r.getValues().get(1); // 2nd column is column with people names
 
             if (isColorsTitle(cellData)) return people;
 
@@ -113,17 +114,21 @@ public class ParseHelper {
         return colors;
     }
 
-    public static Pair<Integer, Integer> getLastDataAndColorsRow(List<RowData> gridData, int offsetFromStart) {
+    public static Pair<Integer, Integer> getLastDataAndColorsRow(List<RowData> rows, int offsetFromStart) {
         int lastDataRow = 0;
         int colorsRow = 0;
 
-        for (int i = 0; i < gridData.size(); i++) {
+        for (int i = offsetFromStart; i < rows.size(); i++) {
 
-            RowData r = gridData.get(i);
+            RowData r = rows.get(i);
 
-            if (isRowEmpty(r) || isCellEmpty(r.getValues().get(1))) continue;
+            if (isRowEmpty(r)) continue;
 
-            if (isColorsTitle(r.getValues().get(1))) {
+            CellData cell = r.getValues().get(Math.min(r.getValues().size() - 1, 1));
+
+            if (isCellEmpty(cell)) continue;
+
+            if (isColorsTitle(cell)) {
                 colorsRow = i;
                 break;
             }
