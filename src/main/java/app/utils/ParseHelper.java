@@ -155,7 +155,7 @@ public class ParseHelper {
                 if (i < reportLimits.getKey() || i > reportLimits.getValue()) continue;
 
                 CellData cell = datesCells.get(i - 1);
-                if (cell.size() == 0) {
+                if (cell.size() == 0 || cell.getEffectiveValue() == null) {
                     cell = datesCells.get(i - 1 - 1);
                 }
                 int dayOfMonth = cell.getEffectiveValue().getNumberValue().intValue();

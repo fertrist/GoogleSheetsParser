@@ -196,7 +196,7 @@ public class ReportProcessor extends SheetsApp {
         int dateCellIndex = start;
         while (dateCellIndex < end) {
             CellData cell = dateCells.get(dateCellIndex); // for case when cells are merged and value is only in first cell
-            if (cell.size() == 0)
+            if (cell.size() == 0 || cell.getEffectiveValue() == null)
             {
                 cell = dateCells.get(dateCellIndex - 1);
             }
@@ -212,6 +212,10 @@ public class ReportProcessor extends SheetsApp {
     private static int getColumnForReportEndDay(List<CellData> dateCells, int start, int end) {
         int dateCellIndex = end - 2; // -1 because of indexing and -1 because end is exclusive
         while (dateCellIndex >= start) {
+            if (dateCells.get(dateCellIndex).size() == 0 || dateCells.get(dateCellIndex).getEffectiveValue() == null) {
+                dateCellIndex--;
+                continue;
+            }
             int day = dateCells.get(dateCellIndex).getEffectiveValue().getNumberValue().intValue();
             if (day == getReportEndDay()) {
                 break;
