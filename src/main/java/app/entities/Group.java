@@ -133,6 +133,14 @@ public class Group implements Comparable<Group> {
         return dataFirstRow;
     }
 
+    public int getRowWithDates() {
+        return rowWithDates;
+    }
+
+    public int getRowWithDays() {
+        return rowWithDays;
+    }
+
     public String getPeopleColumn() {
         return peopleColumn;
     }

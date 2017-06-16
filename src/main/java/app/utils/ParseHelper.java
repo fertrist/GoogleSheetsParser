@@ -154,7 +154,11 @@ public class ParseHelper {
             for (int i = limit.getKey(); i <= limit.getValue(); i++) {
                 if (i < reportLimits.getKey() || i > reportLimits.getValue()) continue;
 
-                int dayOfMonth = datesCells.get(i-1).getEffectiveValue().getNumberValue().intValue();
+                CellData cell = datesCells.get(i - 1);
+                if (cell.size() == 0) {
+                    cell = datesCells.get(i - 1 - 1);
+                }
+                int dayOfMonth = cell.getEffectiveValue().getNumberValue().intValue();
                 columnToDateMap.put(i - reportLimits.getKey(), LocalDate.of(currentYear, getMonthNumber(month), dayOfMonth));
             }
         }

@@ -83,10 +83,10 @@ public class ReportProcessor extends SheetsApp {
 
         List<GridRange> monthMerges = sheet.getMerges();
 
-        RowData monthsRow = sheet.getData().get(0).getRowData().get(0);
+        RowData monthsRow = sheet.getData().get(0).getRowData().get(toIndex(group.getRowWithMonths()));
         List<CellData> monthCells = monthsRow.getValues();
 
-        RowData datesRow = sheet.getData().get(0).getRowData().get(2);
+        RowData datesRow = sheet.getData().get(0).getRowData().get(toIndex(group.getRowWithDates()));
         List<CellData> dateCells = datesRow.getValues();
 
         Map<String, Pair<Integer, Integer>> monthLimits = getMonthLimits(monthMerges, monthCells);
@@ -126,13 +126,17 @@ public class ReportProcessor extends SheetsApp {
 
         List<Item> items = getItems(people, colors, reportColumns, data, columnToDateMap);
 
-        List<Week> weeks = getWeeks(data, Integer.valueOf(group.getGroupDay()), columnToDateMap, colors.get(GROUP));
+        List<Week> weeks = getWeeks(data, group, columnToDateMap, colors.get(GROUP));
 
         weeks = fillWeeks(items, people, weeks);
 
         handleAddedRemovedToList(weeks, group, people);
 
         return weeks;
+    }
+
+    private static int toIndex(int value) {
+        return value - 1;
     }
 
     private static Map<String, Pair<Integer, Integer>> getMonthLimits(List<GridRange> merges, List<CellData> monthCells) {
@@ -191,7 +195,12 @@ public class ReportProcessor extends SheetsApp {
     private static int getColumnForReportStartDay(List<CellData> dateCells, int start, int end) {
         int dateCellIndex = start;
         while (dateCellIndex < end) {
-            int day = dateCells.get(dateCellIndex).getEffectiveValue().getNumberValue().intValue();
+            CellData cell = dateCells.get(dateCellIndex); // for case when cells are merged and value is only in first cell
+            if (cell.size() == 0)
+            {
+                cell = dateCells.get(dateCellIndex - 1);
+            }
+            int day = cell.getEffectiveValue().getNumberValue().intValue();
             if (day == getReportStartDay()) {
                 break;
             }
@@ -289,15 +298,16 @@ public class ReportProcessor extends SheetsApp {
         return items;
     }
 
-    private static List<Week> getWeeks(List<RowData> rows, Integer groupDay, Map<Integer, LocalDate> columnToDateMap,
+    private static List<Week> getWeeks(List<RowData> rows, Group group, Map<Integer, LocalDate> columnToDateMap,
                                        Color groupColor) {
+        Integer groupDay = Integer.valueOf(group.getGroupDay());
         LocalDate reportStart = LocalDate.parse(getReportStartDate());
         LocalDate reportEnd = LocalDate.parse(getReportEndDate());
 
-        RowData daysRow = rows.get(1);
+        RowData daysRow = rows.get(group.getRowWithDays());
         List<CellData> daysCells = daysRow.getValues();
 
-        RowData datesRow = rows.get(2);
+        RowData datesRow = rows.get(group.getRowWithDates());
         List<CellData> datesCells = datesRow.getValues();
 
         List<Week> weeks = getWeeksFromDates(reportStart, reportEnd);
