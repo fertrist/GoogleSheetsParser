@@ -304,7 +304,7 @@ public class ReportProcessor extends SheetsApp {
 
     private static List<Week> getWeeks(List<RowData> rows, Group group, Map<Integer, LocalDate> columnToDateMap,
                                        Color groupColor) {
-        Integer groupDay = Integer.valueOf(group.getGroupDay());
+        Integer groupDay = group.getGroupDay().ordinal();
         LocalDate reportStart = LocalDate.parse(getReportStartDate());
         LocalDate reportEnd = LocalDate.parse(getReportEndDate());
 
@@ -434,7 +434,7 @@ public class ReportProcessor extends SheetsApp {
         headerGridCoordinate.setRowIndex(0);
         updateHeaderRequest.setStart(headerGridCoordinate);
 
-        // TODO add report main header (report summary)
+        // add report main header (report summary)
         List<RowData> headers = new ArrayList<>();
         headers.add(getTitleHeader());
         headers.add(getReportHeader());
@@ -452,7 +452,7 @@ public class ReportProcessor extends SheetsApp {
             totalWhiteCount += region.getTotalWhiteCount();
         }
 
-        // TODO add report main footer (current summary)
+        // add report main footer (current summary)
         UpdateCellsRequest updateFooterRequest = new UpdateCellsRequest();
         updateFooterRequest.setFields("*");
 
@@ -467,7 +467,7 @@ public class ReportProcessor extends SheetsApp {
 
         updateFooterRequest.setRows(footers);
 
-        // TODO make header frozen, create borders
+        // make header frozen, create borders
         UpdateBordersRequest updateBordersRequest = new UpdateBordersRequest();
         GridRange borderRange = new GridRange().setStartColumnIndex(0).setEndColumnIndex(getReportColumns().length + 1)
                 .setStartRowIndex(1).setEndRowIndex(rowPointer.getValue() + 1).setSheetId(sheetGid);
@@ -517,7 +517,7 @@ public class ReportProcessor extends SheetsApp {
      * @param rowPointer which counts offset of rows, to print next items correctly
      */
     private static void printRegion(Sheets service, MutableInteger rowPointer, Region region) throws IOException {
-        // TODO print region header
+        // print region header
         List<Request> requests = new ArrayList<>();
 
         UpdateCellsRequest updateCellsRequest = new UpdateCellsRequest().setFields("*");

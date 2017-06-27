@@ -5,6 +5,7 @@ import app.entities.Group;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
@@ -122,6 +123,7 @@ public class Configuration {
         String leaderName = getGroupProperty(LEADER, groupNo);
         String groupDay = getGroupProperty(GROUP_DAY, groupNo);
         groupDay = groupDay == null ? getProperty(DEFAULT_GROUP_DAY) : groupDay;
+        DayOfWeek groupWeekDay = getDayOfWeek(Integer.valueOf(groupDay));
 
         String rowWithMonthsStr = getGroupProperty(ROW_WITH_MONTHS, groupNo);
         rowWithMonthsStr = rowWithMonthsStr == null ? getProperty(DEFAULT_ROW_WITH_MONTHS) : rowWithMonthsStr;
@@ -153,7 +155,7 @@ public class Configuration {
 
         return Group.builder().groupNumber(groupNo).spreadSheetId(spreadsheetId)
                 .leaderName(leaderName)
-                .groupDay(groupDay)
+                .groupDay(groupWeekDay)
                 .monthsRow(rowWithMonths)
                 .rowWithDates(rowWithDates)
                 .rowWithDays(rowWithDays)
@@ -162,6 +164,10 @@ public class Configuration {
                 .addedPeople(addedPeople)
                 .removedPeople(removedPeople)
                 .build();
+    }
+
+    public static DayOfWeek getDayOfWeek(int d) {
+        return DayOfWeek.values()[d-1];
     }
 
     public static String getGroupProperty(String property, int groupNo) {

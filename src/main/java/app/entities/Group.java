@@ -2,6 +2,7 @@ package app.entities;
 
 import com.google.common.base.Objects;
 
+import java.time.DayOfWeek;
 import java.util.List;
 
 public class Group implements Comparable<Group> {
@@ -12,7 +13,7 @@ public class Group implements Comparable<Group> {
     private int rowWithMonths;
     private int rowWithDates;
     private int rowWithDays;
-    private String groupDay;
+    private DayOfWeek groupDay;
     private int dataFirstRow;
     private String peopleColumn;
     private List<String> addedPeople;
@@ -47,7 +48,7 @@ public class Group implements Comparable<Group> {
         private int rowWithMonths;
         private int rowWithDates;
         private int rowWithDays;
-        private String groupDay;
+        private DayOfWeek groupDay;
         private int dataFirstRow;
         private String peopleColumn;
         private List<String> addedPeople;
@@ -83,7 +84,7 @@ public class Group implements Comparable<Group> {
             return this;
         }
 
-        public Builder groupDay(String groupDay) {
+        public Builder groupDay(DayOfWeek groupDay) {
             this.groupDay = groupDay;
             return this;
         }
@@ -125,7 +126,7 @@ public class Group implements Comparable<Group> {
         return rowWithMonths;
     }
 
-    public String getGroupDay() {
+    public DayOfWeek getGroupDay() {
         return groupDay;
     }
 

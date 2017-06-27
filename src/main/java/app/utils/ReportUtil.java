@@ -150,35 +150,6 @@ public class ReportUtil {
         return letter;
     }
 
-    public static String getWeekDay(int day) {
-        String weekDay = null;
-        switch (day) {
-            case 1:
-                weekDay = "пн";
-                break;
-            case 2:
-                weekDay = "вт";
-                break;
-            case 3:
-                weekDay = "ср";
-                break;
-            case 4:
-                weekDay = "чт";
-                break;
-            case 5:
-                weekDay = "пт";
-                break;
-            case 6:
-                weekDay = "сб";
-                break;
-            case 7:
-                weekDay = "вс";
-                break;
-
-        }
-        return weekDay;
-    }
-
     public static int getMonthNumber(String month) {
         int number = 0;
         switch (month.toLowerCase()) {
@@ -272,14 +243,14 @@ public class ReportUtil {
     }
 
     public static String join(Collection collection, String s) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder builder = new StringBuilder();
 
-        for(Iterator iterator = collection.iterator(); iterator.hasNext(); buffer.append((String)iterator.next())) {
-            if(buffer.length() != 0) {
-                buffer.append(s);
+        for(Iterator iterator = collection.iterator(); iterator.hasNext(); builder.append((String)iterator.next())) {
+            if(builder.length() != 0) {
+                builder.append(s);
             }
         }
 
-        return buffer.toString();
+        return builder.toString();
     }
 }
