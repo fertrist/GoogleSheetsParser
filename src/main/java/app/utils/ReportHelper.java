@@ -4,25 +4,20 @@ import app.entities.Group;
 import app.entities.Person;
 import app.entities.Week;
 import app.enums.Category;
-import app.enums.Actions;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.Color;
 import com.google.api.services.sheets.v4.model.GridCoordinate;
-import com.google.api.services.sheets.v4.model.GridData;
 import com.google.api.services.sheets.v4.model.Request;
 import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.UpdateCellsRequest;
-import com.sun.deploy.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,6 +29,7 @@ import static app.utils.ReportUtil.getCell;
 import static app.utils.ReportUtil.getCellWithBgColor;
 import static app.utils.ReportUtil.getCellWithValue;
 import static app.utils.ReportUtil.getColor;
+import static app.utils.ReportUtil.join;
 import static app.utils.ReportUtil.listToNote;
 
 /**
@@ -95,7 +91,7 @@ public class ReportHelper {
         footerCells.add(getCellWithBgColor(YELLOW));
         footerCells.add(getCellWithValue(""));
         footerCells.add(getCellWithBgColor(YELLOW));
-        footerCells.add(getCellWithBgColor(uniqueNewPeople.size(), YELLOW).setNote(StringUtils.join(uniqueNewPeople, "\n")));
+        footerCells.add(getCellWithBgColor(uniqueNewPeople.size(), YELLOW).setNote(join(uniqueNewPeople, "\n")));
         footerCells.add(getCellWithBgColor(YELLOW));
         footerRow.setValues(footerCells);
         return footerRow;

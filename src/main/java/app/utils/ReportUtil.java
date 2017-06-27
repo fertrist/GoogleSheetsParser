@@ -8,10 +8,11 @@ import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;
 import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.google.api.services.sheets.v4.model.RowData;
-import com.sun.deploy.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -52,7 +53,7 @@ public class ReportUtil {
     }
 
     public static String listToNote(List<Person> people) {
-        return StringUtils.join(people.stream().map(Person::getName).collect(Collectors.toList()), "\n");
+        return join(people.stream().map(Person::getName).collect(Collectors.toList()), "\n");
     }
 
     public static CellData getCell(int value, String note) {
@@ -268,5 +269,17 @@ public class ReportUtil {
     public static boolean hasBackground(CellData cell) {
         return cell.getEffectiveFormat() != null
                 && cell.getEffectiveFormat().getBackgroundColor() != null;
+    }
+
+    public static String join(Collection collection, String s) {
+        StringBuffer buffer = new StringBuffer();
+
+        for(Iterator iterator = collection.iterator(); iterator.hasNext(); buffer.append((String)iterator.next())) {
+            if(buffer.length() != 0) {
+                buffer.append(s);
+            }
+        }
+
+        return buffer.toString();
     }
 }

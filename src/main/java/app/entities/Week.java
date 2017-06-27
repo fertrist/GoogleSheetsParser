@@ -2,7 +2,6 @@ package app.entities;
 
 import app.enums.Category;
 import app.enums.Actions;
-import com.sun.org.apache.bcel.internal.generic.NEW;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

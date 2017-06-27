@@ -5,6 +5,7 @@ import app.entities.*;
 import app.enums.Category;
 import app.enums.Actions;
 import app.utils.Configuration;
+import app.utils.MutableInteger;
 import app.utils.ReportUtil;
 import app.utils.SheetsApp;
 import com.google.api.services.sheets.v4.model.*;
@@ -12,7 +13,6 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.Color;
 import com.google.common.collect.Lists;
 import javafx.util.Pair;
-import sun.java2d.xr.MutableInteger;
 
 import java.io.IOException;
 import java.time.LocalDate;
