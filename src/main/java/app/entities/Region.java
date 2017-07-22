@@ -12,7 +12,7 @@ public class Region {
 
     public Region(String leader) {
         this.leader = leader;
-        groups = new TreeMap<>();
+        groups = new LinkedHashMap<>();
     }
 
     public String getLeader() {

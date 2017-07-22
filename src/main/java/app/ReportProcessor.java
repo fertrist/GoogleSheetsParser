@@ -182,6 +182,7 @@ public class ReportProcessor extends SheetsApp {
         // if start or end month is missed, use what we have
 
         List<Pair<Integer, Integer>> limits = new ArrayList<>(monthLimits.values());
+        limits.sort(Comparator.comparing(Pair::getKey));
 
         if (startColumn == 0)
             startColumn = limits.get(0).getKey();
@@ -236,7 +237,7 @@ public class ReportProcessor extends SheetsApp {
                 updated.setCategory(Category.WHITE);
                 week.getWhiteList().add(updated);
             }
-            if (containsIgnoreCase(group.getRemovedPeople(), person.getName())) {
+            else if (containsIgnoreCase(group.getRemovedPeople(), person.getName())) {
                 Person updated = person.clone();
                 week.getWhiteList().remove(updated);
                 updated.setCategory(Category.NEW);
@@ -276,18 +277,22 @@ public class ReportProcessor extends SheetsApp {
         List<Item> items = new ArrayList<>();
         for (Person person : people)
         {
+            // case where row is empty for the person thus not fetched
+            if (dataRows.size() < person.getIndex()+1)
+            {
+                continue;
+            }
             RowData row = dataRows.get(person.getIndex());
 
             if (isRowEmpty(row)) continue;
 
-            int diff = startEndColumns.getValue() - startEndColumns.getKey();
-
-            List<CellData> personCells = row.getValues().subList(0, diff).stream().filter(ReportUtil::hasBackground)
-                    .collect(Collectors.toList());
+            List<CellData> personCells = row.getValues();
 
             for (int i = 0; i < personCells.size(); i++)
             {
                 CellData cell = personCells.get(i);
+
+                if (!hasBackground(cell)) continue;
 
                 Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
 
@@ -477,7 +482,7 @@ public class ReportProcessor extends SheetsApp {
                 .setInnerHorizontal(border).setInnerVertical(border);
 
         UpdateSheetPropertiesRequest freezeHeaderUpdateTitleRequest = new UpdateSheetPropertiesRequest().setFields("*");
-        GridProperties gridProperties = new GridProperties().setFrozenRowCount(2).setRowCount(100)
+        GridProperties gridProperties = new GridProperties().setFrozenRowCount(2).setRowCount(MAX_ROWS + 30)
                 .setColumnCount(getReportColumns().length);
 
         SheetProperties sheetProperties = new SheetProperties().setGridProperties(gridProperties)

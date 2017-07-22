@@ -63,7 +63,7 @@ public class ParseHelper {
         boolean isRemoved = containsIgnoreCase(group.getRemovedPeople(), name);
         boolean onTrial = name.toLowerCase().contains("(и.с") || name.toLowerCase().contains("(исп.срок)");
 
-        if ((isWhite(effectiveFormat.getBackgroundColor()) && !isAdded) || isRemoved) {
+        if ((isWhite(effectiveFormat.getBackgroundColor()) && !isAdded && !onTrial) || isRemoved) {
             category = Category.WHITE;
         }
         else if (isGrey(effectiveFormat.getBackgroundColor()) || onTrial) {
