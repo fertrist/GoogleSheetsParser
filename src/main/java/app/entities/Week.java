@@ -5,6 +5,7 @@ import app.enums.Actions;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,9 +34,9 @@ public class Week {
         return getPresent().size();
     }
 
-    public List<Person> getPresentByCategory(Category category)
+    public List<Person> getPresentByCategory(Category... categories)
     {
-        return items.stream().filter(i -> i.getAction() == Actions.GROUP && i.getPerson().getCategory() == category)
+        return items.stream().filter(i -> i.getAction() == Actions.GROUP && Arrays.asList(categories).contains(i.getPerson().getCategory()))
                 .map(Item::getPerson).collect(Collectors.toList());
     }
 
@@ -51,16 +52,16 @@ public class Week {
         return getItemsByActionAndCategory(Actions.MEETING, Category.NEW).size();
     }
 
-    private List<Item> getItemsByActionAndCategory(Actions action, Category category)
+    private List<Item> getItemsByActionAndCategory(Actions action, Category... categories)
     {
         return items.stream().filter(i -> i.getAction() == action
-                && i.getPerson().getCategory() == category).collect(Collectors.toList());
+                && Arrays.asList(categories).contains(i.getPerson().getCategory())).collect(Collectors.toList());
     }
 
 
     public int getMeetingWhite()
     {
-        return getItemsByActionAndCategory(Actions.MEETING, Category.WHITE).size();
+        return getItemsByActionAndCategory(Actions.MEETING, Category.WHITE, Category.TRIAL).size();
     }
 
     public int getVisitNew()
@@ -70,7 +71,7 @@ public class Week {
 
     public int getVisitWhite()
     {
-      return getItemsByActionAndCategory(Actions.VISIT, Category.WHITE).size();
+      return getItemsByActionAndCategory(Actions.VISIT, Category.WHITE, Category.TRIAL).size();
     }
 
     public int getCalls() {

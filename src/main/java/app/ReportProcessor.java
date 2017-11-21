@@ -2,15 +2,13 @@ package app;
 
 import app.data.CustomSheetApi;
 import app.entities.*;
-import app.enums.Category;
 import app.enums.Actions;
+import app.enums.Category;
 import app.utils.Configuration;
 import app.utils.MutableInteger;
-import app.utils.ReportUtil;
 import app.utils.SheetsApp;
-import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
-import com.google.api.services.sheets.v4.model.Color;
+import com.google.api.services.sheets.v4.model.*;
 import com.google.common.collect.Lists;
 import javafx.util.Pair;
 
@@ -22,10 +20,8 @@ import java.util.stream.Collectors;
 import static app.enums.Actions.GROUP;
 import static app.utils.Configuration.*;
 import static app.utils.ParseHelper.*;
-import static app.utils.ParseHelper.parsePeople;
-import static app.utils.ReportUtil.*;
-import static app.utils.Configuration.getProperty;
 import static app.utils.ReportHelper.*;
+import static app.utils.ReportUtil.*;
 import static java.util.Collections.singletonList;
 
 /**
@@ -275,6 +271,7 @@ public class ReportProcessor extends SheetsApp {
             List<RowData> dataRows, Map<Integer, LocalDate> columnToDateMap)
     {
         List<Item> items = new ArrayList<>();
+        int diff = startEndColumns.getValue() - startEndColumns.getKey();
         for (Person person : people)
         {
             // case where row is empty for the person thus not fetched
@@ -287,6 +284,8 @@ public class ReportProcessor extends SheetsApp {
             if (isRowEmpty(row)) continue;
 
             List<CellData> personCells = row.getValues();
+            /*List<CellData> personCells = row.getValues().subList(0, diff).stream().filter(ReportUtil::hasBackground)
+                    .collect(Collectors.toList());*/
 
             for (int i = 0; i < personCells.size(); i++)
             {
@@ -296,10 +295,11 @@ public class ReportProcessor extends SheetsApp {
 
                 Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
 
-                LocalDate date = columnToDateMap.get(i);
-
                 Actions action = getActionByColor(bgColor, colors);
-                if (action != null) {
+
+                if (action != null)
+                {
+                    LocalDate date = columnToDateMap.get(i);
                     items.add(new Item(person.clone(), action, date));
                 }
             }

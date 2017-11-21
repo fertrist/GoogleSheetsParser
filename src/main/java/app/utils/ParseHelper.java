@@ -61,13 +61,17 @@ public class ParseHelper {
         // handle added/removed people (they first are considered as if they weren't added/removed)
         boolean isAdded = containsIgnoreCase(group.getAddedPeople(), name);
         boolean isRemoved = containsIgnoreCase(group.getRemovedPeople(), name);
-        boolean onTrial = name.toLowerCase().contains("(и.с") || name.toLowerCase().contains("(исп.срок)");
+        boolean onTrial = name.toLowerCase().contains("(и.с") || name.toLowerCase().contains("(исп.срок)")
+                || name.toLowerCase().contains("(исп");
 
         if ((isWhite(effectiveFormat.getBackgroundColor()) && !isAdded && !onTrial) || isRemoved) {
             category = Category.WHITE;
         }
-        else if (isGrey(effectiveFormat.getBackgroundColor()) || onTrial) {
+        else if (isGrey(effectiveFormat.getBackgroundColor()) && !onTrial) {
             category = Category.GUEST;
+        }
+        else if (isGrey(effectiveFormat.getBackgroundColor()) && onTrial) {
+            category = Category.TRIAL;
         }
         else {
             category = Category.NEW;

@@ -1,5 +1,5 @@
 package app.enums;
 
 public enum Category {
-    WHITE, NEW, GUEST
+    WHITE, NEW, GUEST, TRIAL
 }

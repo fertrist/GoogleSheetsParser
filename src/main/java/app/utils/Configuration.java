@@ -123,7 +123,7 @@ public class Configuration {
         String leaderName = getGroupProperty(LEADER, groupNo);
         String groupDay = getGroupProperty(GROUP_DAY, groupNo);
         groupDay = groupDay == null ? getProperty(DEFAULT_GROUP_DAY) : groupDay;
-        DayOfWeek groupWeekDay = getDayOfWeek(Integer.valueOf(groupDay));
+        DayOfWeek groupWeekDay = getDayOfWeek(Integer.valueOf(groupDay.trim()));
 
         String rowWithMonthsStr = getGroupProperty(ROW_WITH_MONTHS, groupNo);
         rowWithMonthsStr = rowWithMonthsStr == null ? getProperty(DEFAULT_ROW_WITH_MONTHS) : rowWithMonthsStr;

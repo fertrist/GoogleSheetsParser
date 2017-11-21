@@ -139,9 +139,11 @@ public class ReportHelper {
             listWhite.setNote(note);
         }
         CellData presentWhite = getCell(week.getPresentByCategory(Category.WHITE).size(), listToNote(week.getWhiteAbsent()));
-        CellData presentGuests = getCell(week.getPresentByCategory(Category.GUEST).size(), listToNote(week.getPresentByCategory(Category.GUEST)));
-        CellData presentNew = getCell(week.getPresentByCategory(Category.NEW).size(), listToNote(week.getPresentByCategory(Category.NEW)));
-        newPeople.addAll(week.getPresentByCategory(Category.NEW).stream().map(Person::getName).collect(Collectors.toSet()));
+        List<Person> guests = week.getPresentByCategory(Category.GUEST, Category.TRIAL);
+        CellData presentGuests = getCell(guests.size(), listToNote(guests));
+        List<Person> newGuys = week.getPresentByCategory(Category.NEW);
+        CellData presentNew = getCell(newGuys.size(), listToNote(newGuys));
+        newPeople.addAll(newGuys.stream().map(Person::getName).collect(Collectors.toSet()));
         CellData groupRate = getCellWithValue(
                 week.getPercents() != null ? week.getPercents() : "-");
         groupRate.setNote(week.getGroupComments());
