@@ -193,7 +193,7 @@ public class ReportUtil {
         return number;
     }
 
-    public static String getMonthFromString(String rawString) {
+    public static String getMonthNameFromString(String rawString) {
         rawString = rawString.toLowerCase();
         String month = "";
         for (Month m : Month.values()) {
@@ -202,6 +202,18 @@ public class ReportUtil {
             }
         }
         return month;
+    }
+
+    public static Month getMonthFromString(String s) {
+
+        s = s.toLowerCase();
+
+        for (Month m : Month.values()) {
+            if (s.contains(m.getName())) {
+                return m;
+            }
+        }
+        return null;
     }
 
     /**

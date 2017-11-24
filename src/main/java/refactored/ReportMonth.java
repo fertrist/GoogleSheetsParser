@@ -1,24 +1,25 @@
 package refactored;
 
-public class Month
+import app.utils.ReportUtil.Month;
+
+public class ReportMonth
 {
-    private String name;
+    private Month month;
     private int start;
     private int end;
 
-    public Month(String name, int start, int end)
-    {
-        this.name = name;
+    public ReportMonth(Month month, int start, int end) {
+        this.month = month;
         this.start = start;
         this.end = end;
     }
 
-    public String getName() {
-        return name;
+    public Month getMonth() {
+        return month;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setMonth(Month month) {
+        this.month = month;
     }
 
     public int getStart() {
