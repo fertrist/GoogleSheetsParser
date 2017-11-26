@@ -97,8 +97,6 @@ public class RefactoredReportProcessor extends SheetsApp {
 
     private static final int MAX_ROWS = 120;
 
-
-
     public static void main(String[] args) throws IOException {
         Sheets sheetsService = getSheetsService();
         CustomSheetApi sheetApi = new CustomSheetApi(sheetsService);
@@ -150,10 +148,7 @@ public class RefactoredReportProcessor extends SheetsApp {
 
         List<ReportMonth> months = getMonthsFromMergedCells(mergedCellsWithMonths, monthCells);
 
-        List<String> coveredMonths = getCoveredMonths(months);
-
-        months = new LinkedHashMap<>(months.entrySet().stream().filter(e -> coveredMonths.contains(e.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+        List<ReportMonth> coveredMonths = getCoveredMonths(months);
 
         Pair<Integer, Integer> reportColumns = getExactColumnsForReportData(dateCells, months);
 
@@ -231,33 +226,31 @@ public class RefactoredReportProcessor extends SheetsApp {
      * Get raw, approximate, rough range of columns to work with (to avoid parsing old columns)
      */
     private static Pair<Integer, Integer> getExactColumnsForReportData(List<CellData> dateCells,
-                                                                       Map<String, Pair<Integer, Integer>> monthLimits) {
+                                                                       List<ReportMonth> coveredMonths) {
         // define start/end
         int startColumn = 0;
         int endColumn = 0;
 
-        for (Map.Entry<String, Pair<Integer, Integer>> monthLimit : monthLimits.entrySet()) {
+        for (ReportMonth month : coveredMonths) {
 
-            String month = monthLimit.getKey();
-            Pair<Integer, Integer> limit = monthLimit.getValue();
+            String monthName = month.getMonth().getName();
 
-            if (month.equals(getReportStartMonth())) {
-                startColumn = getColumnForReportStartDay(dateCells, limit.getKey(), limit.getValue());
+            if (monthName.equals(getReportStartMonth())) {
+                startColumn = getColumnForReportStartDay(dateCells, month.getStart(), month.getEnd());
             }
-            if (month.equals(getReportEndMonth())) {
-                endColumn = getColumnForReportEndDay(dateCells, limit.getKey(), limit.getValue());
+            if (monthName.equals(getReportEndMonth())) {
+                endColumn = getColumnForReportEndDay(dateCells, month.getStart(), month.getEnd());
             }
         }
         // if start or end month is missed, use what we have
 
-        List<Pair<Integer, Integer>> limits = new ArrayList<>(monthLimits.values());
-        limits.sort(Comparator.comparing(Pair::getKey));
+        coveredMonths.sort(Comparator.comparing(ReportMonth::getStart));
 
         if (startColumn == 0)
-            startColumn = limits.get(0).getKey();
+            startColumn = coveredMonths.get(0).getStart();
 
         if (endColumn == 0)
-            endColumn = limits.get(limits.size()-1).getValue();
+            endColumn = coveredMonths.get(coveredMonths.size()-1).getEnd();
 
         return new Pair<>(startColumn, endColumn);
     }
@@ -462,7 +455,7 @@ public class RefactoredReportProcessor extends SheetsApp {
         }
     }
 
-    private static List<String> getCoveredMonths(List<ReportMonth> allMonthFromSheet) {
+    private static List<ReportMonth> getCoveredMonths(List<ReportMonth> allMonthFromSheet) {
 
         LocalDate reportStartDate = LocalDate.parse(getReportStartDate());
         LocalDate reportEndDate = LocalDate.parse(getReportEndDate());
@@ -484,7 +477,7 @@ public class RefactoredReportProcessor extends SheetsApp {
             }
         }
 
-        return coveredMonths;
+        return coveredReportMonths;
     }
 
     private static List<Month> getMonthsFromRange(LocalDate startDate, LocalDate endDate)

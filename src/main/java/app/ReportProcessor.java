@@ -147,7 +147,7 @@ public class ReportProcessor extends SheetsApp {
             if (monthCells.get(mergeStartIndex).getEffectiveValue() == null) continue;
 
             String monthName = monthCells.get(mergeStartIndex).getEffectiveValue().getStringValue();
-            monthName = getMonthFromString(monthName);
+            monthName = getMonthNameFromString(monthName);
 
             monthsMap.put(monthName, new Pair<>(merge.getStartColumnIndex()+1, merge.getEndColumnIndex()));
         }
