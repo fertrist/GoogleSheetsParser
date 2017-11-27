@@ -37,4 +37,9 @@ public class ReportMonth
     public void setEnd(int end) {
         this.end = end;
     }
+
+    public int getMonthNumber()
+    {
+        return month.ordinal() + 1;
+    }
 }

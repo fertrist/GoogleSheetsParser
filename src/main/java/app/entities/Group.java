@@ -170,4 +170,10 @@ public class Group implements Comparable<Group> {
                 .add("removedPeople", removedPeople)
                 .toString();
     }
+
+    public String getPeopleColumnAsNumber()
+    {
+        return String.valueOf((char) (getPeopleColumn().toCharArray()[0] - 1));
+    }
+
 }

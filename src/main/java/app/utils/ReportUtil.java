@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 
 public class ReportUtil {
 
+    public static final int MAX_ROWS = 120;
+
     public static boolean isRowEmpty(RowData r) {
         return r == null || r.getValues() == null;
     }

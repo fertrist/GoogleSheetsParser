@@ -19,7 +19,6 @@ import static app.utils.Configuration.getSheetGid;
 import static app.utils.ParseHelper.getColumnToDateMap;
 import static app.utils.ParseHelper.getLastDataAndColorsRow;
 import static app.utils.ParseHelper.parseColors;
-import static app.utils.ParseHelper.parsePeople;
 import static app.utils.ReportHelper.GREY;
 import static app.utils.ReportHelper.getReportColumns;
 import static app.utils.ReportHelper.getReportFooterRow;
@@ -44,14 +43,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import app.utils.ReportUtil.Month;
 import javafx.util.Pair;
@@ -66,7 +63,6 @@ import app.enums.Actions;
 import app.enums.Category;
 import app.utils.Configuration;
 import app.utils.MutableInteger;
-import app.utils.ReportUtil;
 import app.utils.SheetsApp;
 
 import com.google.api.services.sheets.v4.Sheets;
@@ -95,12 +91,10 @@ import com.google.common.collect.Lists;
  */
 public class RefactoredReportProcessor extends SheetsApp {
 
-    private static final int MAX_ROWS = 120;
-
     public static void main(String[] args) throws IOException {
         Sheets sheetsService = getSheetsService();
         CustomSheetApi sheetApi = new CustomSheetApi(sheetsService);
-        GroupSheet.setSheetApi(sheetApi);
+        GroupSheetApi.setSheetApi(sheetApi);
 
         process(sheetsService);
     }
@@ -138,45 +132,33 @@ public class RefactoredReportProcessor extends SheetsApp {
         // get start end columns for report
         System.out.println("Processing " + group.getLeaderName() + "'s group.");
 
-        GroupSheet groupSheet = new GroupSheet(group);
+        GroupSheetApi groupSheetApi = new GroupSheetApi(group);
 
-        List<GridRange> mergedCellsWithMonths = groupSheet.getMergesWithMonths();
+        List<CellData> monthCells = groupSheetApi.getCellsWithMonths();
 
-        List<CellData> monthCells = groupSheet.getCellsWithMonths();
+        List<CellData> dateCells = groupSheetApi.getCellsWithDates();
 
-        List<CellData> dateCells = groupSheet.getCellsWithDates();
+        List<GridRange> mergedCellsWithMonths = groupSheetApi.getMergesWithMonths();
 
         List<ReportMonth> months = getMonthsFromMergedCells(mergedCellsWithMonths, monthCells);
 
         List<ReportMonth> coveredMonths = getCoveredMonths(months);
 
-        Pair<Integer, Integer> reportColumns = getExactColumnsForReportData(dateCells, months);
+        Pair<Integer, Integer> reportColumns = getExactColumnsForReportData(dateCells, coveredMonths);
+
+        Map<Integer, LocalDate> columnToDateMap = getColumnToDateMap(coveredMonths, reportColumns, dateCells);
 
         System.out.printf("Columns Range : [%s : %s] %n",
                 columnToLetter(reportColumns.getKey()), columnToLetter(reportColumns.getValue()));
 
-        Map<Integer, LocalDate> columnToDateMap = getColumnToDateMap(months, reportColumns, dateCells);
+        PeopleAndColorExtractor peopleAndColorExtractor = new PeopleAndColorExtractor(group);
 
-        // parse people and colors
-        String numberColumn = String.valueOf((char) (group.getPeopleColumn().toCharArray()[0] - 1));
+        List<Person> people = peopleAndColorExtractor.getPeople();
 
-        List<RowData> peopleColorRows = sheetApi
-                .getRowsData(spreadsheetId, group.getDataFirstRow(), MAX_ROWS, numberColumn, group.getPeopleColumn());
-
-        List<Person> people = parsePeople(peopleColorRows, group);
-
-        int dataOffset = group.getDataFirstRow();
-
-        Pair<Integer, Integer> dataColorRows = getLastDataAndColorsRow(peopleColorRows, dataOffset);
-        int lastDataRow = dataColorRows.getKey();
-        int colorsRow = dataColorRows.getValue();
-
-        Map<Actions, Color> colors = parseColors(peopleColorRows, colorsRow - dataOffset);
-
+        Map<Actions, Color> colors = peopleAndColorExtractor.extractColors();
 
         // get data and parse it
-        List<RowData> data = sheetApi.getRowsData(spreadsheetId,
-                group.getRowWithMonths(), lastDataRow, reportColumns.getKey(), reportColumns.getValue());
+        List<RowData> data = peopleAndColorExtractor.getData(reportColumns);
 
         List<Item> items = getItems(people, colors, reportColumns, data, columnToDateMap);
 

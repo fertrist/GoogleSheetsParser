@@ -10,7 +10,7 @@ import com.google.api.services.sheets.v4.model.Sheet;
 import java.io.IOException;
 import java.util.List;
 
-public class GroupSheet
+public class GroupSheetApi
 {
     private static CustomSheetApi sheetApi;
 
@@ -18,7 +18,7 @@ public class GroupSheet
 
     private Sheet sheet;
 
-    public GroupSheet(Group group)
+    public GroupSheetApi(Group group)
     {
         this.group = group;
     }
@@ -65,7 +65,7 @@ public class GroupSheet
 
     public static void setSheetApi(CustomSheetApi sheetApi)
     {
-        GroupSheet.sheetApi = sheetApi;
+        GroupSheetApi.sheetApi = sheetApi;
     }
 
     private static int toIndex(int value)
