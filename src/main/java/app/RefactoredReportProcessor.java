@@ -1,42 +1,98 @@
 package app;
 
 import app.data.CustomSheetApi;
-import app.entities.*;
+import app.entities.Group;
+import app.entities.Item;
+import app.entities.Person;
+import app.entities.Region;
+import app.entities.Week;
 import app.enums.Actions;
 import app.enums.Category;
 import app.utils.Configuration;
 import app.utils.MutableInteger;
+import app.utils.ParseHelper;
+import app.utils.ReportUtil.Month;
 import app.utils.SheetsApp;
 import com.google.api.services.sheets.v4.Sheets;
-import com.google.api.services.sheets.v4.model.*;
+import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
+import com.google.api.services.sheets.v4.model.Border;
+import com.google.api.services.sheets.v4.model.CellData;
+import com.google.api.services.sheets.v4.model.CellFormat;
+import com.google.api.services.sheets.v4.model.Color;
+import com.google.api.services.sheets.v4.model.ExtendedValue;
+import com.google.api.services.sheets.v4.model.GridCoordinate;
+import com.google.api.services.sheets.v4.model.GridProperties;
+import com.google.api.services.sheets.v4.model.GridRange;
+import com.google.api.services.sheets.v4.model.MergeCellsRequest;
+import com.google.api.services.sheets.v4.model.RepeatCellRequest;
+import com.google.api.services.sheets.v4.model.Request;
+import com.google.api.services.sheets.v4.model.RowData;
+import com.google.api.services.sheets.v4.model.SheetProperties;
+import com.google.api.services.sheets.v4.model.UpdateBordersRequest;
+import com.google.api.services.sheets.v4.model.UpdateCellsRequest;
+import com.google.api.services.sheets.v4.model.UpdateSheetPropertiesRequest;
 import com.google.common.collect.Lists;
 import javafx.util.Pair;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static app.enums.Actions.GROUP;
-import static app.utils.Configuration.*;
-import static app.utils.ParseHelper.*;
-import static app.utils.ReportHelper.*;
-import static app.utils.ReportUtil.*;
+import static app.utils.Configuration.GROUPS;
+import static app.utils.Configuration.LEADER;
+import static app.utils.Configuration.REGIONS;
+import static app.utils.Configuration.REPORT_SPREADSHEET_URL;
+import static app.utils.Configuration.REPORT_TITLE;
+import static app.utils.Configuration.getProperty;
+import static app.utils.Configuration.getRegionProperty;
+import static app.utils.Configuration.getReportEndDate;
+import static app.utils.Configuration.getReportEndDay;
+import static app.utils.Configuration.getReportEndMonth;
+import static app.utils.Configuration.getReportSpreadSheetId;
+import static app.utils.Configuration.getReportStartDate;
+import static app.utils.Configuration.getReportStartDay;
+import static app.utils.Configuration.getReportStartMonth;
+import static app.utils.Configuration.getSheetGid;
+import static app.utils.ReportHelper.GREY;
+import static app.utils.ReportHelper.getReportColumns;
+import static app.utils.ReportHelper.getReportFooterRow;
+import static app.utils.ReportHelper.getReportHeader;
+import static app.utils.ReportHelper.getTitleHeader;
+import static app.utils.ReportHelper.printWeeks;
+import static app.utils.ReportUtil.MAX_ROWS;
+import static app.utils.ReportUtil.areColorsEqual;
+import static app.utils.ReportUtil.columnToLetter;
+import static app.utils.ReportUtil.containsIgnoreCase;
+import static app.utils.ReportUtil.getActionByColor;
+import static app.utils.ReportUtil.getCellWithBgColor;
+import static app.utils.ReportUtil.getColor;
+import static app.utils.ReportUtil.getMonthFromString;
+import static app.utils.ReportUtil.getWeeksFromDates;
+import static app.utils.ReportUtil.hasBackground;
+import static app.utils.ReportUtil.isRowEmpty;
 import static java.util.Collections.singletonList;
 
 /**
  * Pass CONFIGURATION_FILE as vm option for example:
  * -DCONFIGURATION_FILE=/home/myUser/.../resources/report.configuration.properties
  */
-public class ReportProcessor extends SheetsApp {
-
-    private static final int MAX_ROWS = 120;
-
-    private static CustomSheetApi sheetApi;
+public class RefactoredReportProcessor extends SheetsApp {
 
     public static void main(String[] args) throws IOException {
         Sheets sheetsService = getSheetsService();
-        sheetApi = new CustomSheetApi(sheetsService);
+        CustomSheetApi sheetApi = new CustomSheetApi(sheetsService);
+        GroupSheetApi.setSheetApi(sheetApi);
+
         process(sheetsService);
     }
 
@@ -73,52 +129,33 @@ public class ReportProcessor extends SheetsApp {
         // get start end columns for report
         System.out.println("Processing " + group.getLeaderName() + "'s group.");
 
-        String spreadsheetId = group.getSpreadSheetId();
+        GroupSheetApi groupSheetApi = new GroupSheetApi(group);
 
-        Sheet sheet = sheetApi.getSheet(spreadsheetId, group.getRowWithMonths(), group.getDataFirstRow() - 1);
+        List<CellData> monthCells = groupSheetApi.getCellsWithMonths();
 
-        List<GridRange> monthMerges = sheet.getMerges();
+        List<CellData> dateCells = groupSheetApi.getCellsWithDates();
 
-        RowData monthsRow = sheet.getData().get(0).getRowData().get(toIndex(group.getRowWithMonths()));
-        List<CellData> monthCells = monthsRow.getValues();
+        List<GridRange> mergedCellsWithMonths = groupSheetApi.getMergesWithMonths();
 
-        RowData datesRow = sheet.getData().get(0).getRowData().get(toIndex(group.getRowWithDates()));
-        List<CellData> dateCells = datesRow.getValues();
+        List<ReportMonth> months = getMonthsFromMergedCells(mergedCellsWithMonths, monthCells);
 
-        Map<String, Pair<Integer, Integer>> monthLimits = getMonthLimits(monthMerges, monthCells);
+        List<ReportMonth> coveredMonths = getCoveredMonths(months);
 
-        List<String> coveredMonths = getCoveredMonths(monthLimits);
+        Pair<Integer, Integer> reportColumns = getExactColumnsForReportData(dateCells, coveredMonths);
 
-        monthLimits = new LinkedHashMap<>(monthLimits.entrySet().stream().filter(e -> coveredMonths.contains(e.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-
-        Pair<Integer, Integer> reportColumns = getExactColumnsForReportData(dateCells, monthLimits);
+        Map<Integer, LocalDate> columnToDateMap = ParseHelper.getColumnToDateMap(coveredMonths, reportColumns, dateCells);
 
         System.out.printf("Columns Range : [%s : %s] %n",
                 columnToLetter(reportColumns.getKey()), columnToLetter(reportColumns.getValue()));
 
-        Map<Integer, LocalDate> columnToDateMap = getColumnToDateMap(monthLimits, reportColumns, dateCells);
+        PeopleAndColorExtractor peopleAndColorExtractor = new PeopleAndColorExtractor(group);
 
-        // parse people and colors
-        String numberColumn = String.valueOf((char) (group.getPeopleColumn().toCharArray()[0] - 1));
+        List<Person> people = peopleAndColorExtractor.getPeople();
 
-        List<RowData> peopleColorRows = sheetApi
-                .getRowsData(spreadsheetId, group.getDataFirstRow(), MAX_ROWS, numberColumn, group.getPeopleColumn());
-
-        List<Person> people = parsePeople(peopleColorRows, group);
-
-        int dataOffset = group.getDataFirstRow();
-
-        Pair<Integer, Integer> dataColorRows = getLastDataAndColorsRow(peopleColorRows, dataOffset);
-        int lastDataRow = dataColorRows.getKey();
-        int colorsRow = dataColorRows.getValue();
-
-        Map<Actions, Color> colors = parseColors(peopleColorRows, colorsRow - dataOffset);
-
+        Map<Actions, Color> colors = peopleAndColorExtractor.extractColors();
 
         // get data and parse it
-        List<RowData> data = sheetApi.getRowsData(spreadsheetId,
-                group.getRowWithMonths(), lastDataRow, reportColumns.getKey(), reportColumns.getValue());
+        List<RowData> data = peopleAndColorExtractor.getData(reportColumns);
 
         List<Item> items = getItems(people, colors, reportColumns, data, columnToDateMap);
 
@@ -131,60 +168,68 @@ public class ReportProcessor extends SheetsApp {
         return weeks;
     }
 
-    private static int toIndex(int value) {
-        return value - 1;
-    }
+    private static List<ReportMonth> getMonthsFromMergedCells(List<GridRange> mergedCellsMetadata, List<CellData> mergedMonthsCells) {
 
-    private static Map<String, Pair<Integer, Integer>> getMonthLimits(List<GridRange> merges, List<CellData> monthCells) {
-        merges.sort((Comparator.comparing(GridRange::getStartColumnIndex)));
+        // TODO sort list of months instead of raw data
+        mergedCellsMetadata.sort((Comparator.comparing(GridRange::getStartColumnIndex)));
 
-        //sort and map merges to start end indexes
-        Map<String, Pair<Integer, Integer>> monthsMap = new HashMap<>();
-        for (GridRange merge : merges) {
+        List<ReportMonth> months = new ArrayList<>();
+
+        for (GridRange merge : mergedCellsMetadata) {
 
             int mergeStartIndex = merge.getStartColumnIndex();
 
-            if (monthCells.get(mergeStartIndex).getEffectiveValue() == null) continue;
+            ExtendedValue valueFromCell = mergedMonthsCells.get(mergeStartIndex).getEffectiveValue();
 
-            String monthName = monthCells.get(mergeStartIndex).getEffectiveValue().getStringValue();
-            monthName = getMonthNameFromString(monthName);
+            if (valueFromCell == null) continue;
 
-            monthsMap.put(monthName, new Pair<>(merge.getStartColumnIndex()+1, merge.getEndColumnIndex()));
+            String stringValueFromCell = valueFromCell.getStringValue();
+
+            Month month = getMonthFromString(stringValueFromCell);
+
+            ReportMonth reportMonth = createReportMonth(month, merge);
+
+            months.add(reportMonth);
         }
-        return monthsMap;
+        return months;
+    }
+
+    private static ReportMonth createReportMonth(Month month, GridRange gridRangeForMonth)
+    {
+        int monthStartColumn = gridRangeForMonth.getStartColumnIndex() + 1;
+        int monthEndColumn = gridRangeForMonth.getEndColumnIndex();
+        return new ReportMonth(month, monthStartColumn, monthEndColumn);
     }
 
     /**
      * Get raw, approximate, rough range of columns to work with (to avoid parsing old columns)
      */
     private static Pair<Integer, Integer> getExactColumnsForReportData(List<CellData> dateCells,
-                                                                       Map<String, Pair<Integer, Integer>> monthLimits) {
+                                                                       List<ReportMonth> coveredMonths) {
         // define start/end
         int startColumn = 0;
         int endColumn = 0;
 
-        for (Map.Entry<String, Pair<Integer, Integer>> monthLimit : monthLimits.entrySet()) {
+        for (ReportMonth month : coveredMonths) {
 
-            String month = monthLimit.getKey();
-            Pair<Integer, Integer> limit = monthLimit.getValue();
+            String monthName = month.getMonth().getName();
 
-            if (month.equals(getReportStartMonth())) {
-                startColumn = getColumnForReportStartDay(dateCells, limit.getKey(), limit.getValue());
+            if (monthName.equals(getReportStartMonth())) {
+                startColumn = getColumnForReportStartDay(dateCells, month.getStart(), month.getEnd());
             }
-            if (month.equals(getReportEndMonth())) {
-                endColumn = getColumnForReportEndDay(dateCells, limit.getKey(), limit.getValue());
+            if (monthName.equals(getReportEndMonth())) {
+                endColumn = getColumnForReportEndDay(dateCells, month.getStart(), month.getEnd());
             }
         }
         // if start or end month is missed, use what we have
 
-        List<Pair<Integer, Integer>> limits = new ArrayList<>(monthLimits.values());
-        limits.sort(Comparator.comparing(Pair::getKey));
+        coveredMonths.sort(Comparator.comparing(ReportMonth::getStart));
 
         if (startColumn == 0)
-            startColumn = limits.get(0).getKey();
+            startColumn = coveredMonths.get(0).getStart();
 
         if (endColumn == 0)
-            endColumn = limits.get(limits.size()-1).getValue();
+            endColumn = coveredMonths.get(coveredMonths.size()-1).getEnd();
 
         return new Pair<>(startColumn, endColumn);
     }
@@ -389,39 +434,58 @@ public class ReportProcessor extends SheetsApp {
         }
     }
 
-    private static List<String> getCoveredMonths(Map<String, Pair<Integer, Integer>> monthsMap) {
+    private static List<ReportMonth> getCoveredMonths(List<ReportMonth> allMonthFromSheet) {
 
         LocalDate reportStartDate = LocalDate.parse(getReportStartDate());
         LocalDate reportEndDate = LocalDate.parse(getReportEndDate());
 
-        Set<String> months = new LinkedHashSet<>(); // order is important here
+        List<Month> coveredMonths = getMonthsFromRange(reportStartDate, reportEndDate);
 
-        for (LocalDate tmp = reportStartDate; tmp.isBefore(reportEndDate) || tmp.isEqual(reportEndDate);
-             tmp = tmp.plusDays(1))
-        {
-            Month[] values = Month.values();
-            String month = values[tmp.getMonthValue() - 1].getName();
-            if (monthsMap.get(month) != null) {
-                months.add(month);
-            }
-        }
-
-        List<String> coveredMonths = new ArrayList<>(months);
+        List<ReportMonth> coveredReportMonths = allMonthFromSheet.stream().filter(reportMonth -> coveredMonths.contains(reportMonth.getMonth())).collect(Collectors.toList());
 
         // validate months are recent and really are covered
-        ListIterator<String> iterator = coveredMonths.listIterator();
+        ListIterator<ReportMonth> iterator = coveredReportMonths.listIterator();
         int previousEnd = 0;
         while (iterator.hasNext()) {
-            String nextMonth = iterator.next();
-            int nextStart = monthsMap.get(nextMonth).getKey();
+            ReportMonth nextMonth = iterator.next();
+            int nextStart = nextMonth.getStart();
             if (nextStart < previousEnd) {
                 iterator.remove();
             } else {
-                previousEnd = monthsMap.get(nextMonth).getValue();
+                previousEnd = nextMonth.getEnd();
             }
         }
 
-        return coveredMonths;
+        return coveredReportMonths;
+    }
+
+    private static List<Month> getMonthsFromRange(LocalDate startDate, LocalDate endDate)
+    {
+        Set<Month> coveredMonths = new LinkedHashSet<>();
+
+        while (lessOrEqual(startDate, endDate)) {
+            Month monthFromRange = convertToLocalMonth(startDate.getMonth());
+            coveredMonths.add(monthFromRange);
+        }
+
+        return coveredMonths.stream().collect(Collectors.toList());
+    }
+
+    private static Month convertToLocalMonth(java.time.Month month)
+    {
+        int monthNumber = month.ordinal();
+        return Month.values()[monthNumber - 1];
+
+    }
+
+    private static LocalDate addOneDay(LocalDate date)
+    {
+        return date.plusDays(1);
+    }
+
+    private static boolean lessOrEqual(LocalDate subjectDate, LocalDate dateToCompareWith)
+    {
+        return subjectDate.isBefore(dateToCompareWith) || subjectDate.isEqual(dateToCompareWith);
     }
 
     /**

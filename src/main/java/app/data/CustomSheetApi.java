@@ -28,11 +28,19 @@ public class CustomSheetApi {
         return spreadsheet.getSheets().get(0);
     }
 
+    public List<RowData> getRowsData(String spreadsheetId, String rangeExpression) throws IOException {
+        System.out.println("Fetching data : " + rangeExpression);
+
+        Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
+                .setRanges(Collections.singletonList(rangeExpression)).setIncludeGridData(true).execute();
+
+        return spreadsheet.getSheets().get(0).getData().get(0).getRowData();
+    }
+
     public List<RowData> getRowsData(String spreadsheetId, int startRow, int endRow,
                                      String startColumn, String endColumn) throws IOException {
-        String start = startColumn + startRow;
-
-        String end = endColumn + endRow;
+        String start = getRangePoint(startColumn, startRow);
+        String end = getRangePoint(endColumn, endRow);
         String dataRange = start + ":" + end;
 
         System.out.println("Fetching data : " + dataRange);
@@ -41,6 +49,18 @@ public class CustomSheetApi {
                 .setRanges(Collections.singletonList(dataRange)).setIncludeGridData(true).execute();
 
         return spreadsheet.getSheets().get(0).getData().get(0).getRowData();
+    }
+
+    public String getRangeExpression(int startRow, int endRow, String startColumn, String endColumn)
+    {
+        String start = getRangePoint(startColumn, startRow);
+        String end = getRangePoint(endColumn, endRow);
+        return start + ":" + end;
+    }
+
+    private String getRangePoint(String column, int row)
+    {
+        return column + row;
     }
 
     public List<RowData> getRowsData(String spreadsheetId, int startRow, int endRow,

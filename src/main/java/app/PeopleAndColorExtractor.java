@@ -1,4 +1,4 @@
-package refactored;
+package app;
 
 import app.data.CustomSheetApi;
 import app.entities.Group;
@@ -41,7 +41,8 @@ public class PeopleAndColorExtractor
     {
         if (rowsWithPeopleAndColors == null)
         {
-            rowsWithPeopleAndColors = sheetApi.getRowsData(group.getSpreadSheetId(), group.getDataFirstRow(), ReportUtil.MAX_ROWS, group.getPeopleColumnAsNumber(), group.getPeopleColumn());
+            String rangeExpression = sheetApi.getRangeExpression(group.getDataFirstRow(), ReportUtil.MAX_ROWS, group.getPeopleColumnAsNumber(), group.getPeopleColumn());
+            rowsWithPeopleAndColors = sheetApi.getRowsData(group.getSpreadSheetId(), rangeExpression);
         }
         return rowsWithPeopleAndColors;
     }

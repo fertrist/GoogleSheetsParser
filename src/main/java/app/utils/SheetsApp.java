@@ -1,6 +1,6 @@
 package app.utils;
 
-import app.ReportProcessor;
+import app.RefactoredReportProcessor;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
@@ -65,7 +65,7 @@ abstract public class SheetsApp {
     public static Credential authorize() throws IOException {
         // Load client secrets.
         InputStream in =
-                ReportProcessor.class.getResourceAsStream("/client_secret.json");
+                RefactoredReportProcessor.class.getResourceAsStream("/client_secret.json");
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
