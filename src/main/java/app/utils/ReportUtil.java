@@ -1,7 +1,7 @@
 package app.utils;
 
+import app.entities.GroupWeeklyReport;
 import app.entities.Person;
-import app.entities.Week;
 import app.enums.Actions;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.CellFormat;
@@ -26,15 +26,15 @@ public class ReportUtil {
         return r == null || r.getValues() == null;
     }
 
-    public static List<Week> getWeeksFromDates(LocalDate start, LocalDate end) {
-        List<Week> weeks = new ArrayList<>();
+    public static List<GroupWeeklyReport> getWeeksFromDates(LocalDate start, LocalDate end) {
+        List<GroupWeeklyReport> groupWeeklyReports = new ArrayList<>();
         for (LocalDate tmp = start; tmp.isBefore(end) || tmp.isEqual(end); tmp = tmp.plusWeeks(1)) {
-            Week week = new Week();
-            week.setStart(tmp);
-            week.setEnd(tmp.plusDays(6));
-            weeks.add(week);
+            GroupWeeklyReport groupWeeklyReport = new GroupWeeklyReport();
+            groupWeeklyReport.setStart(tmp);
+            groupWeeklyReport.setEnd(tmp.plusDays(6));
+            groupWeeklyReports.add(groupWeeklyReport);
         }
-        return weeks;
+        return groupWeeklyReports;
     }
 
     public enum Month {
@@ -206,7 +206,7 @@ public class ReportUtil {
         return month;
     }
 
-    public static Month getMonthFromString(String s) {
+    public static Month constructMonthFromName(String s) {
 
         s = s.toLowerCase();
 

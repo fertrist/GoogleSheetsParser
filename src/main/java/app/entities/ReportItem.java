@@ -4,13 +4,13 @@ import app.enums.Actions;
 
 import java.time.LocalDate;
 
-public class Item {
+public class ReportItem {
 
     private Actions action;
     private Person person;
     private LocalDate date;
 
-    public Item(Person person, Actions action, LocalDate date) {
+    public ReportItem(Person person, Actions action, LocalDate date) {
         this.action = action;
         this.date = date;
         this.person = person;
@@ -38,7 +38,7 @@ public class Item {
 
     @Override
     public String toString() {
-        return "Item{" +
+        return "ReportItem{" +
                 "action=" + action +
                 ", person=" + person +
                 ", date='" + date + '\'' +

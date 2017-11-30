@@ -1,39 +1,64 @@
-package app.utils;
-
-import app.entities.Group;
-import app.entities.Person;
-import app.enums.Actions;
-import app.enums.Category;
-import com.google.api.services.sheets.v4.model.CellData;
-import com.google.api.services.sheets.v4.model.CellFormat;
-import com.google.api.services.sheets.v4.model.Color;
-import com.google.api.services.sheets.v4.model.RowData;
-import javafx.util.Pair;
-import app.ReportMonth;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+package app.dao;
 
 import static app.utils.ReportUtil.containsIgnoreCase;
 import static app.utils.ReportUtil.isGrey;
 import static app.utils.ReportUtil.isRowEmpty;
 import static app.utils.ReportUtil.isWhite;
+import app.entities.Group;
+import app.entities.Person;
+import app.enums.Actions;
+import app.enums.Category;
+import app.utils.ReportUtil;
+import com.google.api.services.sheets.v4.model.CellData;
+import com.google.api.services.sheets.v4.model.CellFormat;
+import com.google.api.services.sheets.v4.model.Color;
+import com.google.api.services.sheets.v4.model.RowData;
+import javafx.util.Pair;
 
-/**
- * Does stuff related to parsing.
- */
-public class ParseHelper {
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+public class PeopleAndColorExtractor
+{
     private static final String COLORS_TITLE = "условные обозначения";
-    public static final Integer DATA_OVERLAP = 30;
+
+    private static CustomSheetApi sheetApi;
+
+    private Group group;
+
+    private List<RowData> rowsWithPeopleAndColors;
+
+    public PeopleAndColorExtractor(Group group) {
+        this.group = group;
+    }
+
+    public List<RowData> getRowsWithPeopleAndColors() throws IOException
+    {
+        if (rowsWithPeopleAndColors == null)
+        {
+            String rangeExpression = sheetApi.getRangeExpression(group.getDataFirstRow(), ReportUtil.MAX_ROWS, group.getPeopleColumnAsNumber(), group.getPeopleColumn());
+            rowsWithPeopleAndColors = sheetApi.getRowsData(group.getSpreadSheetId(), rangeExpression);
+        }
+        return rowsWithPeopleAndColors;
+    }
+
+    public static void setSheetApi(CustomSheetApi sheetApi)
+    {
+        PeopleAndColorExtractor.sheetApi = sheetApi;
+    }
+
+    public List<Person> getPeople() throws IOException
+    {
+        return parsePeopleFromRows(getRowsWithPeopleAndColors());
+    }
 
     /**
      * Retrieves people by categories
      */
-    public static List<Person> parsePeople(List<RowData> peopleData, Group group) {
+    private List<Person> parsePeopleFromRows(List<RowData> peopleData) {
         List<Person> people = new ArrayList<>();
 
         int offset = group.getDataFirstRow() - 1;
@@ -58,7 +83,7 @@ public class ParseHelper {
         return people;
     }
 
-    private static Category defineCategory(CellData cellData, Group group) {
+    private Category defineCategory(CellData cellData, Group group) {
 
         CellFormat effectiveFormat = cellData.getEffectiveFormat();
 
@@ -87,19 +112,7 @@ public class ParseHelper {
         return category;
     }
 
-    private static boolean isColorsTitle(CellData cellData) {
-        return isUnderline(cellData) && cellData.getEffectiveValue() != null
-                && cellData.getEffectiveValue().getStringValue().equalsIgnoreCase(COLORS_TITLE);
-    }
-
-    private static boolean isUnderline(CellData cellData) {
-        return cellData.getEffectiveFormat() != null && cellData.getEffectiveFormat().getTextFormat().getUnderline();
-    }
-
-    private static boolean isCellEmpty(CellData cellData) {
-        return cellData.getEffectiveValue() == null || cellData.getEffectiveValue().getStringValue() == null
-                || cellData.getEffectiveValue().getStringValue().isEmpty();
-    }
+    public static final Integer DATA_OVERLAP = 30;
 
     public static Map<Actions, Color> parseColors(List<RowData> rows, int colorsRow) {
         Map<Actions, Color> colors = new HashMap<>();
@@ -113,7 +126,7 @@ public class ParseHelper {
 
             if (isCellEmpty(nameCell) ||
                     (colorCell.getEffectiveFormat() == null
-                    || colorCell.getEffectiveFormat().getBackgroundColor() == null)) {
+                            || colorCell.getEffectiveFormat().getBackgroundColor() == null)) {
                 break;
             }
 
@@ -149,59 +162,30 @@ public class ParseHelper {
         return new Pair<>(lastDataRow + offsetFromStart, colorsRow + offsetFromStart);
     }
 
-    public static Map<Integer, LocalDate> getColumnToDateMap(Map<String, Pair<Integer, Integer>> monthLimits,
-                                                             Pair<Integer, Integer> reportLimits,
-                                                             List<CellData> datesCells) {
+    public Map<Actions, Color> extractColors() throws IOException
+    {
+        int dataOffset = group.getDataFirstRow();
 
-        Map<Integer, LocalDate> columnToDateMap = new HashMap<>();
-        int currentYear = LocalDate.now().getYear();
+        Pair<Integer, Integer> dataColorRows = getLastDataAndColorsRow(getRowsWithPeopleAndColors(), dataOffset);
+        int colorsRow = dataColorRows.getValue();
+        int lastDataRow = dataColorRows.getKey();
 
-        for (String month : monthLimits.keySet()) {
+        Map<Actions, Color> colors = parseColors(getRowsWithPeopleAndColors(), colorsRow - dataOffset);
 
-            Pair<Integer, Integer> limit = monthLimits.get(month);
-            if (limit.getKey() > reportLimits.getValue()
-                    || limit.getValue() < reportLimits.getKey()) continue;
-
-            for (int i = limit.getKey(); i <= limit.getValue(); i++) {
-                if (i < reportLimits.getKey() || i > reportLimits.getValue()) continue;
-
-                CellData cell = datesCells.get(i - 1);
-                if (cell.size() == 0 || cell.getEffectiveValue() == null) {
-                    cell = datesCells.get(i - 1 - 1);
-                }
-                int dayOfMonth = cell.getEffectiveValue().getNumberValue().intValue();
-                columnToDateMap.put(i - reportLimits.getKey(), LocalDate.of(currentYear, ReportUtil.getMonthNumber(month), dayOfMonth));
-            }
-        }
-
-        return columnToDateMap;
+        return colors;
     }
 
-    public static Map<Integer, LocalDate> getColumnToDateMap(List<ReportMonth> reportMonths,
-                                                             Pair<Integer, Integer> reportLimits,
-                                                             List<CellData> datesCells) {
-
-        Map<Integer, LocalDate> columnToDateMap = new HashMap<>();
-        int currentYear = LocalDate.now().getYear();
-
-        for (ReportMonth month : reportMonths) {
-
-            if (month.getStart() > reportLimits.getValue()
-                    || month.getEnd() < reportLimits.getKey()) continue;
-
-            for (int i = month.getStart(); i <= month.getEnd(); i++) {
-                if (i < reportLimits.getKey() || i > reportLimits.getValue()) continue;
-
-                CellData cell = datesCells.get(i - 1);
-                if (cell.size() == 0 || cell.getEffectiveValue() == null) {
-                    cell = datesCells.get(i - 1 - 1);
-                }
-                int dayOfMonth = cell.getEffectiveValue().getNumberValue().intValue();
-                columnToDateMap.put(i - reportLimits.getKey(), LocalDate.of(currentYear, month.getMonthNumber(), dayOfMonth));
-            }
-        }
-
-        return columnToDateMap;
+    private static boolean isColorsTitle(CellData cellData) {
+        return isUnderline(cellData) && cellData.getEffectiveValue() != null
+                && cellData.getEffectiveValue().getStringValue().equalsIgnoreCase(COLORS_TITLE);
     }
 
+    private static boolean isUnderline(CellData cellData) {
+        return cellData.getEffectiveFormat() != null && cellData.getEffectiveFormat().getTextFormat().getUnderline();
+    }
+
+    private static boolean isCellEmpty(CellData cellData) {
+        return cellData.getEffectiveValue() == null || cellData.getEffectiveValue().getStringValue() == null
+                || cellData.getEffectiveValue().getStringValue().isEmpty();
+    }
 }

@@ -1,14 +1,14 @@
-package app;
+package app.entities;
 
 import app.utils.ReportUtil.Month;
 
-public class ReportMonth
+public class MonthData
 {
     private Month month;
     private int start;
     private int end;
 
-    public ReportMonth(Month month, int start, int end) {
+    public MonthData(Month month, int start, int end) {
         this.month = month;
         this.start = start;
         this.end = end;

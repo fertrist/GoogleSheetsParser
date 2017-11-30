@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Week {
+public class GroupWeeklyReport {
 
     private LocalDate start;
     private LocalDate end;
@@ -17,17 +17,17 @@ public class Week {
     private String groupComments;
 
     private List<Person> whiteList = new ArrayList<>();
-    private List<Item> items = new ArrayList<>();
+    private List<ReportItem> reportItems = new ArrayList<>();
 
-    public Week() {}
+    public GroupWeeklyReport() {}
 
     public List<Person> getWhiteList() {
         return whiteList;
     }
 
     public List<Person> getPresent() {
-        return items.stream().filter(i -> i.getAction() == Actions.GROUP)
-                .map(Item::getPerson).collect(Collectors.toList());
+        return reportItems.stream().filter(i -> i.getAction() == Actions.GROUP)
+                .map(ReportItem::getPerson).collect(Collectors.toList());
     }
 
     public int getTotalCount() {
@@ -36,8 +36,8 @@ public class Week {
 
     public List<Person> getPresentByCategory(Category... categories)
     {
-        return items.stream().filter(i -> i.getAction() == Actions.GROUP && Arrays.asList(categories).contains(i.getPerson().getCategory()))
-                .map(Item::getPerson).collect(Collectors.toList());
+        return reportItems.stream().filter(i -> i.getAction() == Actions.GROUP && Arrays.asList(categories).contains(i.getPerson().getCategory()))
+                .map(ReportItem::getPerson).collect(Collectors.toList());
     }
 
     public List<Person> getWhiteAbsent()
@@ -52,9 +52,9 @@ public class Week {
         return getItemsByActionAndCategory(Actions.MEETING, Category.NEW).size();
     }
 
-    private List<Item> getItemsByActionAndCategory(Actions action, Category... categories)
+    private List<ReportItem> getItemsByActionAndCategory(Actions action, Category... categories)
     {
-        return items.stream().filter(i -> i.getAction() == action
+        return reportItems.stream().filter(i -> i.getAction() == action
                 && Arrays.asList(categories).contains(i.getPerson().getCategory())).collect(Collectors.toList());
     }
 
@@ -110,7 +110,7 @@ public class Week {
         this.groupComments = groupComments;
     }
 
-    public List<Item> getItems() {
-        return items;
+    public List<ReportItem> getReportItems() {
+        return reportItems;
     }
 }
