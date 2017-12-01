@@ -138,9 +138,11 @@ public class PeopleAndColorExtractor
         return colors;
     }
 
-    public static Pair<Integer, Integer> getLastDataAndColorsRow(List<RowData> rows, int offsetFromStart) {
+    public Pair<Integer, Integer> getLastDataAndColorsRow(List<RowData> rows) {
         int lastDataRow = 0;
         int colorsRow = 0;
+
+        int offsetFromStart = group.getDataFirstRow();
 
         for (int i = offsetFromStart; i < rows.size(); i++) {
 
@@ -164,13 +166,11 @@ public class PeopleAndColorExtractor
 
     public Map<Actions, Color> extractColors() throws IOException
     {
-        int dataOffset = group.getDataFirstRow();
-
-        Pair<Integer, Integer> dataColorRows = getLastDataAndColorsRow(getRowsWithPeopleAndColors(), dataOffset);
+        Pair<Integer, Integer> dataColorRows = getLastDataAndColorsRow(getRowsWithPeopleAndColors());
         int colorsRow = dataColorRows.getValue();
         int lastDataRow = dataColorRows.getKey();
 
-        Map<Actions, Color> colors = parseColors(getRowsWithPeopleAndColors(), colorsRow - dataOffset);
+        Map<Actions, Color> colors = parseColors(getRowsWithPeopleAndColors(), colorsRow - group.getDataFirstRow());
 
         return colors;
     }

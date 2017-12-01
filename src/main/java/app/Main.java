@@ -23,8 +23,8 @@ public class Main {
 
         // TODO collect metadata into wrapper
 
-        RegionsReportGenerator regionsReportGenerator = new RegionsReportGenerator();
-        List<RegionReport> regionReportReports = regionsReportGenerator.collectRegionReports();
+        ReportGenerator reportGenerator = new ReportGenerator();
+        List<RegionReport> regionReportReports = reportGenerator.collectRegionReports();
     }
 
 }

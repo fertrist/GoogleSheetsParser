@@ -1,5 +1,7 @@
 package app.dao;
 
+import static app.utils.ReportUtil.columnToLetter;
+import app.entities.ReportRange;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.Sheet;
@@ -8,8 +10,6 @@ import com.google.api.services.sheets.v4.model.Spreadsheet;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-
-import static app.utils.ReportUtil.columnToLetter;
 
 public class CustomSheetApi {
 
@@ -68,6 +68,20 @@ public class CustomSheetApi {
         String start = columnToLetter(startColumn) + startRow;
 
         String end = columnToLetter(endColumn) + endRow;
+        String dataRange = start + ":" + end;
+
+        System.out.println("Fetching data : " + dataRange);
+
+        Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId)
+                .setRanges(Collections.singletonList(dataRange)).setIncludeGridData(true).execute();
+
+        return spreadsheet.getSheets().get(0).getData().get(0).getRowData();
+    }
+
+    public List<RowData> getRowsData(String spreadsheetId, ReportRange reportRange) throws IOException {
+        String start = columnToLetter(reportRange.getStart().getColumn()) + reportRange.getStart().getRow();
+
+        String end = columnToLetter(reportRange.getEnd().getColumn()) + reportRange.getStart().getRow();
         String dataRange = start + ":" + end;
 
         System.out.println("Fetching data : " + dataRange);

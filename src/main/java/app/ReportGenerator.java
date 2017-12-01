@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class RegionsReportGenerator {
+public class ReportGenerator {
 
     public List<RegionReport> collectRegionReports() throws IOException {
 

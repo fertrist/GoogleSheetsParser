@@ -1,23 +1,22 @@
 package app;
 
+import app.entities.Group;
+import app.entities.ReportRange;
+import app.utils.ColumnToDateMapper;
 import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.RowData;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 public class GroupTableData
 {
-    private RowData monthsRow;
-
-    private RowData datesRow;
-
+    private Group group;
     private List<GridRange> merges;
-
+    private RowData monthsRow;
+    private RowData datesRow;
     private List<RowData> data;
-
-    private Map<Integer, LocalDate> columnToDateMap;
+    private ColumnToDateMapper columnToDateMapper;
+    private ReportRange reportRange;
 
     public RowData getMonthsRow() {
         return monthsRow;
@@ -49,5 +48,33 @@ public class GroupTableData
 
     public void setData(List<RowData> data) {
         this.data = data;
+    }
+
+    public Group getGroup() {
+        return group;
+    }
+
+    public void setGroup(Group group) {
+        this.group = group;
+    }
+
+    public void initColumnToDateMapper() {
+        this.columnToDateMapper = new ColumnToDateMapper(this);
+    }
+
+    public void initReportLimit() {
+        this.reportRange = columnToDateMapper.getReportLimit();
+    }
+
+    public ReportRange getReportRange() {
+        return reportRange;
+    }
+
+    public void setReportRange(ReportRange reportRange) {
+        this.reportRange = reportRange;
+    }
+
+    public ColumnToDateMapper getColumnToDateMapper() {
+        return columnToDateMapper;
     }
 }

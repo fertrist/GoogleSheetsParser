@@ -2,6 +2,7 @@ package app.dao;
 
 import app.GroupTableData;
 import app.entities.Group;
+import app.entities.ReportRange;
 import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.Sheet;
@@ -41,27 +42,46 @@ public class GroupSheetApi
         }
     }
 
-    public GroupTableData getGroupTableData()
+    public GroupTableData getGroupTableData() throws IOException
     {
         GroupTableData groupTableData = new GroupTableData();
+        groupTableData.setGroup(group);
         groupTableData.setDatesRow(getDatesRow());
         groupTableData.setMerges(getMonthMerges());
         groupTableData.setMonthsRow(getMonthsRow());
-        // TODO groupTableData.setData();
+        groupTableData.initColumnToDateMapper();
+        groupTableData.initReportLimit();
+        groupTableData = setData(groupTableData);
         return groupTableData;
     }
 
-    public List<RowData> getData(Pair<Integer, Integer> reportColumns) throws IOException {
-        int dataOffset = group.getDataFirstRow();
+    public GroupTableData setData(GroupTableData groupTableData) throws IOException {
 
+        ReportRange reportRange = groupTableData.getReportRange();
+
+        reportRange = updateReportRange(reportRange);
+
+        List<RowData> data = sheetApi.getRowsData(group.getSpreadSheetId(), reportRange);
+
+        groupTableData.setData(data);
+
+        return groupTableData;
+    }
+
+    private ReportRange updateReportRange(ReportRange reportRange) throws IOException
+    {
         PeopleAndColorExtractor peopleAndColorExtractor = new PeopleAndColorExtractor(group);
 
-        Pair<Integer, Integer> dataColorRows = PeopleAndColorExtractor.getLastDataAndColorsRow(peopleAndColorExtractor.getRowsWithPeopleAndColors(), dataOffset);
+        Pair<Integer, Integer> dataColorRows = peopleAndColorExtractor
+                .getLastDataAndColorsRow(peopleAndColorExtractor.getRowsWithPeopleAndColors());
 
         int lastDataRow = dataColorRows.getKey();
 
-        return sheetApi.getRowsData(group.getSpreadSheetId(),
-                group.getRowWithMonths(), lastDataRow, reportColumns.getKey(), reportColumns.getValue());
+        reportRange.getStart().setRow(group.getRowWithMonths());
+
+        reportRange.getEnd().setRow(lastDataRow);
+
+        return reportRange;
     }
 
     public List<GridRange> getMonthMerges()
@@ -96,4 +116,11 @@ public class GroupSheetApi
         return value - 1;
     }
 
+    public Group getGroup() {
+        return group;
+    }
+
+    public void setGroup(Group group) {
+        this.group = group;
+    }
 }
