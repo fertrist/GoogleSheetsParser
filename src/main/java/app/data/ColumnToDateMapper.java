@@ -1,9 +1,10 @@
-package app.utils;
+package app.data;
 
-import app.GroupTableData;
 import app.entities.ColRow;
-import app.entities.MonthData;
-import app.entities.ReportRange;
+import app.report.ReportMonth;
+import app.report.ReportRange;
+import app.extract.GroupTableDataExtractor;
+import app.extract.ReportColumnsExtractor;
 import com.google.api.services.sheets.v4.model.CellData;
 import javafx.util.Pair;
 
@@ -16,11 +17,11 @@ import java.util.Map;
 public class ColumnToDateMapper
 {
     private Map<Integer, LocalDate> columnToDateMap;
-    private List<MonthData> coveredMonths;
+    private List<ReportMonth> coveredMonths;
     private Pair<Integer, Integer> reportColumns;
 
     public ColumnToDateMapper(GroupTableData groupTableData) {
-        this.coveredMonths = new GroupTableDataParser(groupTableData).extractMonthsRequiredForReport();
+        this.coveredMonths = new GroupTableDataExtractor(groupTableData).extractMonthsRequiredForReport();
         this.reportColumns = new ReportColumnsExtractor(groupTableData).getExactColumnsForReportData(coveredMonths);
         initColumnToDateMapFromTableData(groupTableData);
     }
@@ -32,7 +33,7 @@ public class ColumnToDateMapper
         columnToDateMap = new HashMap<>();
         int currentYear = LocalDate.now().getYear();
 
-        for (MonthData month : coveredMonths) {
+        for (ReportMonth month : coveredMonths) {
 
             if (month.getStart() > reportColumns.getValue()
                     || month.getEnd() < reportColumns.getKey()) continue;

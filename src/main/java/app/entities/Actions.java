@@ -1,4 +1,4 @@
-package app.enums;
+package app.entities;
 
 public enum Actions {
     GROUP(new String[]{"групп", "домашк"}),

@@ -1,10 +1,10 @@
-package app.utils;
+package app.extract;
 
-import static app.utils.Configuration.getReportEndDate;
-import static app.utils.Configuration.getReportStartDate;
-import static app.utils.ReportUtil.constructMonthFromName;
-import app.GroupTableData;
-import app.entities.MonthData;
+import static app.conf.Configuration.getReportEndDate;
+import static app.conf.Configuration.getReportStartDate;
+import static app.extract.ReportUtil.constructMonthFromName;
+import app.data.GroupTableData;
+import app.report.ReportMonth;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.GridRange;
 
@@ -17,37 +17,37 @@ import java.util.ListIterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GroupTableDataParser
+public class GroupTableDataExtractor
 {
     private GroupTableData groupTableData;
 
-    public GroupTableDataParser(GroupTableData groupTableData) {
+    public GroupTableDataExtractor(GroupTableData groupTableData) {
         this.groupTableData = groupTableData;
     }
 
-    public List<MonthData> extractMonthsRequiredForReport()
+    public List<ReportMonth> extractMonthsRequiredForReport()
     {
-        List<MonthData> monthsFromTable = extractAllMonthsFromGroupTable();
+        List<ReportMonth> monthsFromTable = extractAllMonthsFromGroupTable();
 
-        List<MonthData> coveredMonths = getCoveredMonths(monthsFromTable);
+        List<ReportMonth> coveredMonths = getCoveredMonths(monthsFromTable);
 
         return coveredMonths;
     }
 
-    private List<MonthData> extractAllMonthsFromGroupTable()
+    private List<ReportMonth> extractAllMonthsFromGroupTable()
     {
         List<CellData> separateCells = groupTableData.getMonthsRow().getValues();
 
-        List<MonthData> months = extractAllMonthsFromMonthsCells(groupTableData.getMergedCells(), separateCells);
+        List<ReportMonth> months = extractAllMonthsFromMonthsCells(groupTableData.getMergedCells(), separateCells);
 
-        months.sort(Comparator.comparing(MonthData::getStart));
+        months.sort(Comparator.comparing(ReportMonth::getStart));
 
         return months;
     }
 
-    private List<MonthData> extractAllMonthsFromMonthsCells(List<GridRange> mergedMonthsCells, List<CellData> separateMonthsCells)
+    private List<ReportMonth> extractAllMonthsFromMonthsCells(List<GridRange> mergedMonthsCells, List<CellData> separateMonthsCells)
     {
-        List<MonthData> months = new ArrayList<>();
+        List<ReportMonth> months = new ArrayList<>();
 
         months.addAll(mergedMonthsCells.stream()
                 .map(mergedMonthCell -> extractSingleMonthFromItsTableCells(mergedMonthCell, separateMonthsCells))
@@ -56,7 +56,7 @@ public class GroupTableDataParser
         return months;
     }
 
-    private MonthData extractSingleMonthFromItsTableCells(GridRange gridRange, List<CellData> monthCells)
+    private ReportMonth extractSingleMonthFromItsTableCells(GridRange gridRange, List<CellData> monthCells)
     {
         CellData mergeFirstCell = monthCells.get(gridRange.getStartColumnIndex());
 
@@ -67,20 +67,20 @@ public class GroupTableDataParser
         return combineMonthData(month, gridRange);
     }
 
-    private static List<MonthData> getCoveredMonths(List<MonthData> monthsFromTable) {
+    private static List<ReportMonth> getCoveredMonths(List<ReportMonth> monthsFromTable) {
 
         LocalDate reportStartDate = LocalDate.parse(getReportStartDate());
         LocalDate reportEndDate = LocalDate.parse(getReportEndDate());
 
         List<ReportUtil.Month> coveredMonths = getMonthsFromRange(reportStartDate, reportEndDate);
 
-        List<MonthData> coveredMonthDatas = monthsFromTable.stream().filter(reportMonth -> coveredMonths.contains(reportMonth.getMonth())).collect(Collectors.toList());
+        List<ReportMonth> coveredReportMonths = monthsFromTable.stream().filter(reportMonth -> coveredMonths.contains(reportMonth.getMonth())).collect(Collectors.toList());
 
         // clean month which have same name but are outside the range
-        ListIterator<MonthData> iterator = coveredMonthDatas.listIterator();
+        ListIterator<ReportMonth> iterator = coveredReportMonths.listIterator();
         int previousEnd = 0;
         while (iterator.hasNext()) {
-            MonthData nextMonth = iterator.next();
+            ReportMonth nextMonth = iterator.next();
             int nextStart = nextMonth.getStart();
             if (nextStart < previousEnd) {
                 iterator.remove();
@@ -89,7 +89,7 @@ public class GroupTableDataParser
             }
         }
 
-        return coveredMonthDatas;
+        return coveredReportMonths;
     }
 
     private static List<ReportUtil.Month> getMonthsFromRange(LocalDate startDate, LocalDate endDate)
@@ -126,11 +126,11 @@ public class GroupTableDataParser
        return cellData.getEffectiveValue() != null ? cellData.getEffectiveValue().getStringValue() : null;
     }
 
-    private static MonthData combineMonthData(ReportUtil.Month month, GridRange gridRangeForMonth)
+    private static ReportMonth combineMonthData(ReportUtil.Month month, GridRange gridRangeForMonth)
     {
         int monthStartColumn = gridRangeForMonth.getStartColumnIndex() + 1;
         int monthEndColumn = gridRangeForMonth.getEndColumnIndex();
-        return new MonthData(month, monthStartColumn, monthEndColumn);
+        return new ReportMonth(month, monthStartColumn, monthEndColumn);
     }
 
 

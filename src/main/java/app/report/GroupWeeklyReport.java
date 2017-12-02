@@ -1,7 +1,8 @@
-package app.entities;
+package app.report;
 
-import app.enums.Category;
-import app.enums.Actions;
+import app.entities.Person;
+import app.entities.Category;
+import app.entities.Actions;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

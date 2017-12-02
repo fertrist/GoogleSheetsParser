@@ -1,12 +1,12 @@
-package app.utils;
+package app.extract;
 
-import static app.utils.Configuration.getReportEndDay;
-import static app.utils.Configuration.getReportEndMonth;
-import static app.utils.Configuration.getReportStartDay;
-import static app.utils.Configuration.getReportStartMonth;
-import static app.utils.ReportUtil.columnToLetter;
-import app.GroupTableData;
-import app.entities.MonthData;
+import static app.conf.Configuration.getReportEndDay;
+import static app.conf.Configuration.getReportEndMonth;
+import static app.conf.Configuration.getReportStartDay;
+import static app.conf.Configuration.getReportStartMonth;
+import static app.extract.ReportUtil.columnToLetter;
+import app.data.GroupTableData;
+import app.report.ReportMonth;
 import com.google.api.services.sheets.v4.model.CellData;
 import javafx.util.Pair;
 
@@ -25,12 +25,12 @@ public class ReportColumnsExtractor
     /**
      * Get raw, approximate, rough range of columns to work with (to avoid parsing old columns)
      */
-    public Pair<Integer, Integer> getExactColumnsForReportData(List<MonthData> coveredMonths) {
+    public Pair<Integer, Integer> getExactColumnsForReportData(List<ReportMonth> coveredMonths) {
         // define start/end
         int startColumn = 0;
         int endColumn = 0;
 
-        for (MonthData month : coveredMonths) {
+        for (ReportMonth month : coveredMonths) {
 
             String monthName = month.getMonth().getName();
 
@@ -43,7 +43,7 @@ public class ReportColumnsExtractor
         }
         // if start or end month is missed, use what we have
 
-        coveredMonths.sort(Comparator.comparing(MonthData::getStart));
+        coveredMonths.sort(Comparator.comparing(ReportMonth::getStart));
 
         if (startColumn == 0)
             startColumn = coveredMonths.get(0).getStart();

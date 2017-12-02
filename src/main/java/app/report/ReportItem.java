@@ -1,6 +1,7 @@
-package app.entities;
+package app.report;
 
-import app.enums.Actions;
+import app.entities.Person;
+import app.entities.Actions;
 
 import java.time.LocalDate;
 

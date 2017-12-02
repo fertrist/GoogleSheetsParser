@@ -1,14 +1,15 @@
-package app.dao;
+package app.extract;
 
-import static app.utils.ReportUtil.containsIgnoreCase;
-import static app.utils.ReportUtil.isGrey;
-import static app.utils.ReportUtil.isRowEmpty;
-import static app.utils.ReportUtil.isWhite;
+import static app.extract.ReportUtil.containsIgnoreCase;
+import static app.extract.ReportUtil.isGrey;
+import static app.extract.ReportUtil.isRowEmpty;
+import static app.extract.ReportUtil.isWhite;
+
+import app.dao.CustomSheetApi;
 import app.entities.Group;
 import app.entities.Person;
-import app.enums.Actions;
-import app.enums.Category;
-import app.utils.ReportUtil;
+import app.entities.Actions;
+import app.entities.Category;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;

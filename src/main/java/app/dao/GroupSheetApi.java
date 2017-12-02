@@ -1,8 +1,9 @@
 package app.dao;
 
-import app.GroupTableData;
+import app.data.GroupTableData;
 import app.entities.Group;
-import app.entities.ReportRange;
+import app.report.ReportRange;
+import app.extract.PeopleAndColorExtractor;
 import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.Sheet;

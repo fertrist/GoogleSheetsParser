@@ -1,14 +1,13 @@
-package app;
+package app.generate;
 
-import static app.utils.Configuration.GROUPS;
-import static app.utils.Configuration.LEADER;
-import static app.utils.Configuration.REGIONS;
-import static app.utils.Configuration.getProperty;
-import static app.utils.Configuration.getRegionProperty;
-import app.entities.GroupReport;
-import app.entities.RegionReport;
-import app.utils.Configuration;
-import app.utils.GroupReportGenerator;
+import static app.conf.Configuration.GROUPS;
+import static app.conf.Configuration.LEADER;
+import static app.conf.Configuration.REGIONS;
+import static app.conf.Configuration.getProperty;
+import static app.conf.Configuration.getRegionProperty;
+import app.report.GroupReport;
+import app.report.RegionReport;
+import app.conf.Configuration;
 
 import java.io.IOException;
 import java.util.Arrays;

@@ -1,7 +1,7 @@
 package app.dao;
 
-import static app.utils.ReportUtil.columnToLetter;
-import app.entities.ReportRange;
+import static app.extract.ReportUtil.columnToLetter;
+import app.report.ReportRange;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.Sheet;

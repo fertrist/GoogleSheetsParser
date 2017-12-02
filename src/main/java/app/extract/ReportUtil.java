@@ -1,8 +1,8 @@
-package app.utils;
+package app.extract;
 
-import app.entities.GroupWeeklyReport;
+import app.report.GroupWeeklyReport;
 import app.entities.Person;
-import app.enums.Actions;
+import app.entities.Actions;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;

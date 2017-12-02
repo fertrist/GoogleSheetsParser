@@ -1,4 +1,6 @@
-package app.entities;
+package app.report;
+
+import app.entities.Group;
 
 import java.util.List;
 

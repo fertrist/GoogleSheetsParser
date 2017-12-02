@@ -1,7 +1,5 @@
 package app.entities;
 
-import app.enums.Category;
-
 public class Person implements Cloneable {
 
     private String name;

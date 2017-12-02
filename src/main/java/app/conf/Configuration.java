@@ -1,4 +1,4 @@
-package app.utils;
+package app.conf;
 
 import app.entities.Group;
 
@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static app.utils.ReportUtil.isEmpty;
+import static app.extract.ReportUtil.isEmpty;
 
 public class Configuration {
 

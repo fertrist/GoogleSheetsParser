@@ -1,4 +1,6 @@
-package app.entities;
+package app.report;
+
+import app.entities.ColRow;
 
 public class ReportRange
 {

@@ -1,11 +1,11 @@
-package app.utils;
+package app.generate;
 
-import app.GroupTableData;
+import app.data.GroupTableData;
 import app.dao.GroupSheetApi;
-import app.dao.PeopleAndColorExtractor;
 import app.entities.Group;
-import app.entities.GroupReport;
-import app.entities.GroupWeeklyReport;
+import app.extract.PeopleAndColorExtractor;
+import app.report.GroupReport;
+import app.report.GroupWeeklyReport;
 
 import java.io.IOException;
 import java.util.List;

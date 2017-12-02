@@ -1,8 +1,7 @@
-package app;
+package app.data;
 
 import app.entities.Group;
-import app.entities.ReportRange;
-import app.utils.ColumnToDateMapper;
+import app.report.ReportRange;
 import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.RowData;
 

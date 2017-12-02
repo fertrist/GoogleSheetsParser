@@ -1,6 +1,7 @@
-package app.entities;
+package app.report;
 
-import app.enums.Category;
+import app.entities.Person;
+import app.entities.Category;
 
 import java.util.*;
 import java.util.stream.Collectors;

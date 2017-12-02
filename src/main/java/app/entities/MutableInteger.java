@@ -1,4 +1,4 @@
-package app.utils;
+package app.entities;
 
 public class MutableInteger {
     private int value;
