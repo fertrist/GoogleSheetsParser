@@ -1,9 +1,14 @@
 package app.dao;
 
+import static app.extract.ReportUtil.isRowEmpty;
 import app.data.GroupTableData;
+import app.entities.CellWrapper;
 import app.entities.Group;
+import app.extract.ColorExtractor;
+import app.extract.PeopleExtractor;
+import app.extract.ReportUtil;
 import app.report.ReportRange;
-import app.extract.PeopleAndColorExtractor;
+import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.Sheet;
@@ -35,7 +40,8 @@ public class GroupSheetApi
         }
         try
         {
-            return sheetApi.getSheet(spreadsheetId, group.getRowWithMonths(), group.getDataFirstRow() - 1);
+            sheet = sheetApi.getSheet(spreadsheetId, group.getRowWithMonths(), group.getDataFirstRow() - 1);
+            return sheet;
         }
         catch (IOException e)
         {
@@ -52,29 +58,22 @@ public class GroupSheetApi
         groupTableData.setMonthsRow(getMonthsRow());
         groupTableData.initColumnToDateMapper();
         groupTableData.initReportLimit();
-        groupTableData = setData(groupTableData);
+        groupTableData.setData(getDataRows(groupTableData.getReportRange()));
+        groupTableData.setPeople(new PeopleExtractor(this).extractPeople());
+        groupTableData.setColorActionMapper(new ColorExtractor(this).getColorActionMapper());
         return groupTableData;
     }
 
-    public GroupTableData setData(GroupTableData groupTableData) throws IOException {
-
-        ReportRange reportRange = groupTableData.getReportRange();
+    public List<RowData> getDataRows(ReportRange reportRange) throws IOException {
 
         reportRange = updateReportRange(reportRange);
 
-        List<RowData> data = sheetApi.getRowsData(group.getSpreadSheetId(), reportRange);
-
-        groupTableData.setData(data);
-
-        return groupTableData;
+        return sheetApi.getRowsData(group.getSpreadSheetId(), reportRange);
     }
 
     private ReportRange updateReportRange(ReportRange reportRange) throws IOException
     {
-        PeopleAndColorExtractor peopleAndColorExtractor = new PeopleAndColorExtractor(group);
-
-        Pair<Integer, Integer> dataColorRows = peopleAndColorExtractor
-                .getLastDataAndColorsRow(peopleAndColorExtractor.getRowsWithPeopleAndColors());
+        Pair<Integer, Integer> dataColorRows = getLastDataAndColorsRow(getRowsWithPeopleAndColors());
 
         int lastDataRow = dataColorRows.getKey();
 
@@ -83,6 +82,39 @@ public class GroupSheetApi
         reportRange.getEnd().setRow(lastDataRow);
 
         return reportRange;
+    }
+
+    public Pair<Integer, Integer> getLastDataAndColorsRow(List<RowData> rows) {
+        int lastDataRow = 0;
+        int colorsRow = 0;
+
+        int offsetFromStart = group.getDataFirstRow();
+
+        for (int i = offsetFromStart; i < rows.size(); i++) {
+
+            RowData r = rows.get(i);
+
+            if (isRowEmpty(r)) continue;
+
+            CellData cell = r.getValues().get(Math.min(r.getValues().size() - 1, 1));
+            CellWrapper cellWrapper = new CellWrapper(cell);
+
+            if (cellWrapper.isCellEmpty()) continue;
+
+            if (cellWrapper.isColorsTitle()) {
+                colorsRow = i;
+                break;
+            }
+
+            lastDataRow = i;
+        }
+        return new Pair<>(lastDataRow + offsetFromStart, colorsRow + offsetFromStart);
+    }
+
+    public List<RowData> getRowsWithPeopleAndColors() throws IOException
+    {
+        String rangeExpression = sheetApi.getRangeExpression(group.getDataFirstRow(), ReportUtil.MAX_ROWS, group.getPeopleColumnAsNumber(), group.getPeopleColumn());
+        return sheetApi.getRowsData(group.getSpreadSheetId(), rangeExpression);
     }
 
     public List<GridRange> getMonthMerges()

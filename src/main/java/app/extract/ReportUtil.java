@@ -1,8 +1,7 @@
 package app.extract;
 
-import app.report.GroupWeeklyReport;
 import app.entities.Person;
-import app.entities.Actions;
+import app.report.GroupWeeklyReport;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;
@@ -14,8 +13,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ReportUtil {
@@ -119,24 +116,6 @@ public class ReportUtil {
         return color;
     }
 
-    public static boolean areColorsEqual(Color color1, Color color2) {
-        return (color1 == color2) || (color1 != null && color2 != null)
-                && Objects.equals(color1.getBlue(), color2.getBlue())
-                && Objects.equals(color1.getRed(), color2.getRed())
-                && Objects.equals(color1.getGreen(), color2.getGreen());
-    }
-
-    public static boolean isWhite(Color color) {
-        return color != null && color.getBlue() != null && color.getBlue() == 1.0
-                && color.getGreen() != null && color.getGreen() == 1.0
-                && color.getRed() != null && color.getRed() == 1.0;
-    }
-
-    public static boolean isGrey(Color color) {
-        return !isWhite(color) && color.getBlue() != null && color.getGreen() != null && color.getRed() != null
-                && color.getBlue().equals(color.getGreen()) && color.getGreen().equals(color.getRed());
-    }
-
     public static String columnToLetter(int column) {
         if (column < 26) {
             return Character.toString((char) (64 + column));
@@ -213,20 +192,6 @@ public class ReportUtil {
         for (Month m : Month.values()) {
             if (s.contains(m.getName())) {
                 return m;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * By cell background get kind of action (meeting, visit, call)
-     * @param color cell background
-     * @param colors color legend
-     */
-    public static Actions getActionByColor(Color color, Map<Actions, Color> colors) {
-        for (Map.Entry<Actions, Color> e : colors.entrySet()) {
-            if (areColorsEqual(e.getValue(), color)) {
-                return e.getKey();
             }
         }
         return null;

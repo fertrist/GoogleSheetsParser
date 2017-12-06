@@ -1,70 +1,65 @@
 package app.generate;
 
-import static app.entities.Actions.GROUP;
 import static app.conf.Configuration.getReportEndDate;
 import static app.conf.Configuration.getReportStartDate;
-import static app.extract.ReportUtil.areColorsEqual;
+import static app.entities.Action.GROUP;
 import static app.extract.ReportUtil.containsIgnoreCase;
-import static app.extract.ReportUtil.getActionByColor;
 import static app.extract.ReportUtil.getWeeksFromDates;
 import static app.extract.ReportUtil.hasBackground;
 import static app.extract.ReportUtil.isRowEmpty;
-
-import app.data.ColumnToDateMapper;
+import app.data.ColorActionMapper;
+import app.data.ColumnDateMapper;
 import app.data.GroupTableData;
-import app.entities.Group;
-import app.extract.PeopleAndColorExtractor;
-import app.report.GroupWeeklyReport;
-import app.entities.Person;
-import app.report.ReportItem;
-import app.entities.Actions;
 import app.entities.Category;
+import app.entities.CellWrapper;
+import app.entities.ColorWrapper;
+import app.entities.Group;
+import app.entities.Person;
+import app.extract.ItemsExtractor;
+import app.report.GroupWeeklyReport;
+import app.report.ReportItem;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.Color;
 import com.google.api.services.sheets.v4.model.RowData;
-import javafx.util.Pair;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class WeeklyReportGenerator
 {
-    private PeopleAndColorExtractor peopleAndColorExtractor;
     private GroupTableData groupTableData;
 
-    public WeeklyReportGenerator(GroupTableData groupTableData) {
-        this.groupTableData = groupTableData;
+    private WeeklyReportGenerator(Builder builder) {
+        this.groupTableData = builder.groupTableData;
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
     }
 
     public List<GroupWeeklyReport> generateWeeklyReports() throws IOException
     {
-        List<Person> people = peopleAndColorExtractor.getPeople();
+        List<ReportItem> reportItems = new ItemsExtractor(groupTableData).getItems();
 
-        Map<Actions, Color> colors = peopleAndColorExtractor.extractColors();
+        List<GroupWeeklyReport> groupWeeklyReports = getWeeks();
 
-        List<RowData> data = groupTableData.getData();
+        groupWeeklyReports = fillWeeks(reportItems, groupWeeklyReports);
 
-        ColumnToDateMapper columnToDateMapper = groupTableData.getColumnToDateMapper();
-
-        List<GroupWeeklyReport> groupWeeklyReports = getWeeks(data, groupTableData.getGroup(), columnToDateMapper, colors.get(GROUP));
-
-        List<ReportItem> reportItems = getItems(people, colors, columnToDateMapper.getReportColumns(), data, columnToDateMapper);
-
-        groupWeeklyReports = fillWeeks(reportItems, people, groupWeeklyReports);
-
-        handleAddedRemovedToList(groupWeeklyReports, groupTableData.getGroup(), people);
+        handleAddedRemovedToList(groupWeeklyReports);
 
         return groupWeeklyReports;
     }
 
-    private static void handleAddedRemovedToList(List<GroupWeeklyReport> groupWeeklyReports, Group group, List<Person> people) {
+    private void handleAddedRemovedToList(List<GroupWeeklyReport> groupWeeklyReports) {
 
         GroupWeeklyReport groupWeeklyReport = groupWeeklyReports.get(groupWeeklyReports.size() - 1);
+
+        Group group = groupTableData.getGroup();
+        List<Person> people = groupTableData.getPeople();
 
         for (Person person : people)
         {
@@ -89,8 +84,9 @@ public class WeeklyReportGenerator
         }
     }
 
-    private static List<GroupWeeklyReport> fillWeeks(List<ReportItem> reportItems, List<Person> people, List<GroupWeeklyReport> groupWeeklyReports) {
+    private List<GroupWeeklyReport> fillWeeks(List<ReportItem> reportItems, List<GroupWeeklyReport> groupWeeklyReports) {
 
+        List<Person> people = groupTableData.getPeople();
         groupWeeklyReports.sort(Comparator.comparing(GroupWeeklyReport::getStart));
         List<Person> whiteList = people.stream().filter(p -> p.getCategory() == Category.WHITE)
                 .map(Person::clone).collect(Collectors.toList());
@@ -102,53 +98,18 @@ public class WeeklyReportGenerator
         return groupWeeklyReports;
     }
 
-    private static boolean withinStartEnd(LocalDate date, LocalDate start, LocalDate end) {
+    private boolean withinStartEnd(LocalDate date, LocalDate start, LocalDate end) {
         return (date.isAfter(start) || date.isEqual(start)) && (date.isBefore(end) || date.isEqual(end));
     }
 
-    private static List<ReportItem> getItems(List<Person> people, Map<Actions, Color> colors,
-                                             Pair<Integer, Integer> startEndColumns,
-                                             List<RowData> dataRows, ColumnToDateMapper columnToDateMapper)
+    private List<GroupWeeklyReport> getWeeks()
     {
-        List<ReportItem> reportItems = new ArrayList<>();
-        int diff = startEndColumns.getValue() - startEndColumns.getKey();
-        for (Person person : people)
-        {
-            // case where row is empty for the person thus not fetched
-            if (dataRows.size() < person.getIndex()+1)
-            {
-                continue;
-            }
-            RowData row = dataRows.get(person.getIndex());
+        ColorActionMapper colorActionMapper = groupTableData.getColorActionMapper();
+        Color groupColor = colorActionMapper.getColorForAction(GROUP);
+        ColumnDateMapper columnDateMapper = groupTableData.getColumnDateMapper();
+        List<RowData> rows = groupTableData.getData();
+        Group group = groupTableData.getGroup();
 
-            if (isRowEmpty(row)) continue;
-
-            List<CellData> personCells = row.getValues();
-            /*List<CellData> personCells = row.getValues().subList(0, diff).stream().filter(ReportUtil::hasBackground)
-                    .collect(Collectors.toList());*/
-
-            for (int i = 0; i < personCells.size(); i++)
-            {
-                CellData cell = personCells.get(i);
-
-                if (!hasBackground(cell)) continue;
-
-                Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
-
-                Actions action = getActionByColor(bgColor, colors);
-
-                if (action != null)
-                {
-                    LocalDate date = columnToDateMapper.dateForColumn(i);
-                    reportItems.add(new ReportItem(person.clone(), action, date));
-                }
-            }
-        }
-        return reportItems;
-    }
-
-    private List<GroupWeeklyReport> getWeeks(List<RowData> rows, Group group, ColumnToDateMapper columnToDateMapper,
-                                             Color groupColor) {
         Integer groupDay = group.getGroupDay().ordinal();
         LocalDate reportStart = LocalDate.parse(getReportStartDate());
         LocalDate reportEnd = LocalDate.parse(getReportEndDate());
@@ -165,7 +126,7 @@ public class WeeklyReportGenerator
 
             LocalDate groupDate = groupWeeklyReport.getStart().plusDays(groupDay - 1);
 
-            List<Integer> groupDayColumns = columnToDateMapper.getColumnsForDate(groupDate);
+            List<Integer> groupDayColumns = columnDateMapper.getColumnsForDate(groupDate);
 
             int groupColumn = getGroupDayColumn(groupDayColumns, rows, groupColor);
 
@@ -194,8 +155,8 @@ public class WeeklyReportGenerator
 
                 if (!hasBackground(cell)) continue;
 
-                Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
-                if (areColorsEqual(bgColor, groupColor)) {
+                ColorWrapper bgColor = new CellWrapper(cell).getBgColor();
+                if (bgColor.equals(new ColorWrapper(groupColor))) {
                     return column;
                 }
             }
@@ -218,7 +179,18 @@ public class WeeklyReportGenerator
         }
     }
 
-    public void setPeopleAndColorExtractor(PeopleAndColorExtractor peopleAndColorExtractor) {
-        this.peopleAndColorExtractor = peopleAndColorExtractor;
+    public static class Builder
+    {
+        private GroupTableData groupTableData;
+
+        public Builder withGroupTableData(GroupTableData groupTableData) {
+            this.groupTableData = groupTableData;
+            return this;
+        }
+
+        public WeeklyReportGenerator build()
+        {
+            return new WeeklyReportGenerator(this);
+        }
     }
 }

@@ -1,6 +1,6 @@
 package app.entities;
 
-public enum Actions {
+public enum Action {
     GROUP(new String[]{"групп", "домашк"}),
     VISIT(new String[]{"посещени"}),
     MEETING(new String[]{"встреч"}),
@@ -8,7 +8,7 @@ public enum Actions {
 
     private String[] possibleValues;
 
-    Actions(String [] possibleValues) {
+    Action(String[] possibleValues) {
         this.possibleValues = possibleValues;
     }
 
@@ -16,8 +16,8 @@ public enum Actions {
         return possibleValues;
     }
 
-    public static Actions getEnumFor(String value) {
-        for (Actions mark : values()) {
+    public static Action getEnumFor(String value) {
+        for (Action mark : values()) {
             for (String possibleValue : mark.getPossibleValues()) {
                 if (value.toLowerCase().contains(possibleValue)) {
                     return mark;

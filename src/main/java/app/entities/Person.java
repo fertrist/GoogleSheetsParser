@@ -6,10 +6,10 @@ public class Person implements Cloneable {
     private Category category;
     private int index;
 
-    public Person(Category category, String name, int index) {
+    public Person(Category category, String name, int listIndex) {
         this.category = category;
         this.name = name;
-        this.index = index;
+        this.index = listIndex;
     }
 
     public Category getCategory() {

@@ -2,7 +2,7 @@ package app.report;
 
 import app.entities.Person;
 import app.entities.Category;
-import app.entities.Actions;
+import app.entities.Action;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class GroupWeeklyReport {
     }
 
     public List<Person> getPresent() {
-        return reportItems.stream().filter(i -> i.getAction() == Actions.GROUP)
+        return reportItems.stream().filter(i -> i.getAction() == Action.GROUP)
                 .map(ReportItem::getPerson).collect(Collectors.toList());
     }
 
@@ -37,7 +37,7 @@ public class GroupWeeklyReport {
 
     public List<Person> getPresentByCategory(Category... categories)
     {
-        return reportItems.stream().filter(i -> i.getAction() == Actions.GROUP && Arrays.asList(categories).contains(i.getPerson().getCategory()))
+        return reportItems.stream().filter(i -> i.getAction() == Action.GROUP && Arrays.asList(categories).contains(i.getPerson().getCategory()))
                 .map(ReportItem::getPerson).collect(Collectors.toList());
     }
 
@@ -50,10 +50,10 @@ public class GroupWeeklyReport {
 
     public int getMeetingNew()
     {
-        return getItemsByActionAndCategory(Actions.MEETING, Category.NEW).size();
+        return getItemsByActionAndCategory(Action.MEETING, Category.NEW).size();
     }
 
-    private List<ReportItem> getItemsByActionAndCategory(Actions action, Category... categories)
+    private List<ReportItem> getItemsByActionAndCategory(Action action, Category... categories)
     {
         return reportItems.stream().filter(i -> i.getAction() == action
                 && Arrays.asList(categories).contains(i.getPerson().getCategory())).collect(Collectors.toList());
@@ -62,21 +62,21 @@ public class GroupWeeklyReport {
 
     public int getMeetingWhite()
     {
-        return getItemsByActionAndCategory(Actions.MEETING, Category.WHITE, Category.TRIAL).size();
+        return getItemsByActionAndCategory(Action.MEETING, Category.WHITE, Category.TRIAL).size();
     }
 
     public int getVisitNew()
     {
-      return getItemsByActionAndCategory(Actions.VISIT, Category.NEW).size();
+      return getItemsByActionAndCategory(Action.VISIT, Category.NEW).size();
     }
 
     public int getVisitWhite()
     {
-      return getItemsByActionAndCategory(Actions.VISIT, Category.WHITE, Category.TRIAL).size();
+      return getItemsByActionAndCategory(Action.VISIT, Category.WHITE, Category.TRIAL).size();
     }
 
     public int getCalls() {
-        return getItemsByActionAndCategory(Actions.CALL, Category.NEW).size();
+        return getItemsByActionAndCategory(Action.CALL, Category.NEW).size();
     }
 
     public LocalDate getStart() {

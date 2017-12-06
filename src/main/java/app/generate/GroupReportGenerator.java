@@ -1,9 +1,7 @@
 package app.generate;
 
-import app.data.GroupTableData;
 import app.dao.GroupSheetApi;
 import app.entities.Group;
-import app.extract.PeopleAndColorExtractor;
 import app.report.GroupReport;
 import app.report.GroupWeeklyReport;
 
@@ -36,18 +34,16 @@ public class GroupReportGenerator
     private List<GroupWeeklyReport> generateGroupWeeklyReports() throws IOException
     {
         System.out.println("Processing " + group.getLeaderName() + "'s group.");
-
-        GroupTableData groupTableData = new GroupSheetApi(group).getGroupTableData();
-
-        return generateWeeklyReports(groupTableData);
+        return generateWeeklyReports();
     }
 
-    private List<GroupWeeklyReport> generateWeeklyReports(GroupTableData groupTableData) throws IOException
+    private List<GroupWeeklyReport> generateWeeklyReports() throws IOException
     {
-        PeopleAndColorExtractor peopleAndColorExtractor = new PeopleAndColorExtractor(groupTableData.getGroup());
+        GroupSheetApi groupSheetApi = new GroupSheetApi(group);
 
-        WeeklyReportGenerator weeklyReportGenerator = new WeeklyReportGenerator(groupTableData);
-        weeklyReportGenerator.setPeopleAndColorExtractor(peopleAndColorExtractor);
+        WeeklyReportGenerator weeklyReportGenerator = WeeklyReportGenerator.builder()
+                .withGroupTableData(groupSheetApi.getGroupTableData())
+                .build();
 
         return weeklyReportGenerator.generateWeeklyReports();
 

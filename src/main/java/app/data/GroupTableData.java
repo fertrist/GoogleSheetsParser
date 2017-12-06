@@ -1,6 +1,7 @@
 package app.data;
 
 import app.entities.Group;
+import app.entities.Person;
 import app.report.ReportRange;
 import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.RowData;
@@ -14,7 +15,9 @@ public class GroupTableData
     private RowData monthsRow;
     private RowData datesRow;
     private List<RowData> data;
-    private ColumnToDateMapper columnToDateMapper;
+    private ColumnDateMapper columnDateMapper;
+    private ColorActionMapper colorActionMapper;
+    private List<Person> people;
     private ReportRange reportRange;
 
     public RowData getMonthsRow() {
@@ -58,11 +61,11 @@ public class GroupTableData
     }
 
     public void initColumnToDateMapper() {
-        this.columnToDateMapper = new ColumnToDateMapper(this);
+        this.columnDateMapper = new ColumnDateMapper(this);
     }
 
     public void initReportLimit() {
-        this.reportRange = columnToDateMapper.getReportLimit();
+        this.reportRange = columnDateMapper.getReportLimit();
     }
 
     public ReportRange getReportRange() {
@@ -73,7 +76,31 @@ public class GroupTableData
         this.reportRange = reportRange;
     }
 
-    public ColumnToDateMapper getColumnToDateMapper() {
-        return columnToDateMapper;
+    public ColumnDateMapper getColumnDateMapper() {
+        return columnDateMapper;
+    }
+
+    public List<GridRange> getMerges() {
+        return merges;
+    }
+
+    public void setColumnDateMapper(ColumnDateMapper columnDateMapper) {
+        this.columnDateMapper = columnDateMapper;
+    }
+
+    public ColorActionMapper getColorActionMapper() {
+        return colorActionMapper;
+    }
+
+    public void setColorActionMapper(ColorActionMapper colorActionMapper) {
+        this.colorActionMapper = colorActionMapper;
+    }
+
+    public List<Person> getPeople() {
+        return people;
+    }
+
+    public void setPeople(List<Person> people) {
+        this.people = people;
     }
 }

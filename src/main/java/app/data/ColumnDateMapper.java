@@ -14,13 +14,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ColumnToDateMapper
+public class ColumnDateMapper
 {
     private Map<Integer, LocalDate> columnToDateMap;
     private List<ReportMonth> coveredMonths;
     private Pair<Integer, Integer> reportColumns;
 
-    public ColumnToDateMapper(GroupTableData groupTableData) {
+    public ColumnDateMapper(GroupTableData groupTableData) {
         this.coveredMonths = new GroupTableDataExtractor(groupTableData).extractMonthsRequiredForReport();
         this.reportColumns = new ReportColumnsExtractor(groupTableData).getExactColumnsForReportData(coveredMonths);
         initColumnToDateMapFromTableData(groupTableData);

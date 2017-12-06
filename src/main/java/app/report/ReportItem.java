@@ -1,27 +1,27 @@
 package app.report;
 
 import app.entities.Person;
-import app.entities.Actions;
+import app.entities.Action;
 
 import java.time.LocalDate;
 
 public class ReportItem {
 
-    private Actions action;
+    private Action action;
     private Person person;
     private LocalDate date;
 
-    public ReportItem(Person person, Actions action, LocalDate date) {
+    public ReportItem(Person person, Action action, LocalDate date) {
         this.action = action;
         this.date = date;
         this.person = person;
     }
 
-    public Actions getAction() {
+    public Action getAction() {
         return action;
     }
 
-    public void setAction(Actions action) {
+    public void setAction(Action action) {
         this.action = action;
     }
 
