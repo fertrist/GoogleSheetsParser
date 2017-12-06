@@ -1,7 +1,6 @@
 package app.extract;
 
 import app.entities.Person;
-import app.report.GroupWeeklyReport;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;
@@ -9,7 +8,6 @@ import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.google.api.services.sheets.v4.model.RowData;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -21,17 +19,6 @@ public class ReportUtil {
 
     public static boolean isRowEmpty(RowData r) {
         return r == null || r.getValues() == null;
-    }
-
-    public static List<GroupWeeklyReport> getWeeksFromDates(LocalDate start, LocalDate end) {
-        List<GroupWeeklyReport> groupWeeklyReports = new ArrayList<>();
-        for (LocalDate tmp = start; tmp.isBefore(end) || tmp.isEqual(end); tmp = tmp.plusWeeks(1)) {
-            GroupWeeklyReport groupWeeklyReport = new GroupWeeklyReport();
-            groupWeeklyReport.setStart(tmp);
-            groupWeeklyReport.setEnd(tmp.plusDays(6));
-            groupWeeklyReports.add(groupWeeklyReport);
-        }
-        return groupWeeklyReports;
     }
 
     public enum Month {

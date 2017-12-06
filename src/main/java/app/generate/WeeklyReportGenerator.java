@@ -2,25 +2,14 @@ package app.generate;
 
 import static app.conf.Configuration.getReportEndDate;
 import static app.conf.Configuration.getReportStartDate;
-import static app.entities.Action.GROUP;
 import static app.extract.ReportUtil.containsIgnoreCase;
-import static app.extract.ReportUtil.getWeeksFromDates;
-import static app.extract.ReportUtil.hasBackground;
-import static app.extract.ReportUtil.isRowEmpty;
-import app.data.ColorActionMapper;
-import app.data.ColumnDateMapper;
 import app.data.GroupTableData;
 import app.entities.Category;
-import app.entities.CellWrapper;
-import app.entities.ColorWrapper;
 import app.entities.Group;
 import app.entities.Person;
 import app.extract.ItemsExtractor;
 import app.report.GroupWeeklyReport;
 import app.report.ReportItem;
-import com.google.api.services.sheets.v4.model.CellData;
-import com.google.api.services.sheets.v4.model.Color;
-import com.google.api.services.sheets.v4.model.RowData;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -45,7 +34,11 @@ public class WeeklyReportGenerator
     {
         List<ReportItem> reportItems = new ItemsExtractor(groupTableData).getItems();
 
-        List<GroupWeeklyReport> groupWeeklyReports = getWeeks();
+        BlankWeeklyReportGenerator blankWeeklyReportGenerator = new BlankWeeklyReportGenerator(groupTableData);
+
+        LocalDate reportStart = LocalDate.parse(getReportStartDate());
+        LocalDate reportEnd = LocalDate.parse(getReportEndDate());
+        List<GroupWeeklyReport> groupWeeklyReports = blankWeeklyReportGenerator.getWeeksForDates(reportStart, reportEnd);
 
         groupWeeklyReports = fillWeeks(reportItems, groupWeeklyReports);
 
@@ -102,83 +95,6 @@ public class WeeklyReportGenerator
         return (date.isAfter(start) || date.isEqual(start)) && (date.isBefore(end) || date.isEqual(end));
     }
 
-    private List<GroupWeeklyReport> getWeeks()
-    {
-        ColorActionMapper colorActionMapper = groupTableData.getColorActionMapper();
-        Color groupColor = colorActionMapper.getColorForAction(GROUP);
-        ColumnDateMapper columnDateMapper = groupTableData.getColumnDateMapper();
-        List<RowData> rows = groupTableData.getData();
-        Group group = groupTableData.getGroup();
-
-        Integer groupDay = group.getGroupDay().ordinal();
-        LocalDate reportStart = LocalDate.parse(getReportStartDate());
-        LocalDate reportEnd = LocalDate.parse(getReportEndDate());
-
-        RowData daysRow = rows.get(group.getRowWithDays());
-        List<CellData> daysCells = daysRow.getValues();
-
-        RowData datesRow = rows.get(group.getRowWithDates());
-        List<CellData> datesCells = datesRow.getValues();
-
-        List<GroupWeeklyReport> groupWeeklyReports = getWeeksFromDates(reportStart, reportEnd);
-
-        for (GroupWeeklyReport groupWeeklyReport : groupWeeklyReports) {
-
-            LocalDate groupDate = groupWeeklyReport.getStart().plusDays(groupDay - 1);
-
-            List<Integer> groupDayColumns = columnDateMapper.getColumnsForDate(groupDate);
-
-            int groupColumn = getGroupDayColumn(groupDayColumns, rows, groupColor);
-
-            if (groupColumn == -1) continue;
-
-            CellData dayCell = daysCells.get(groupColumn);
-            CellData dateCell = datesCells.get(groupColumn);
-
-            String groupNote = dayCell.getNote();
-            groupNote = groupNote != null ? groupNote : dateCell.getNote();
-
-            setGroupComments(groupWeeklyReport, groupNote);
-        }
-        return groupWeeklyReports;
-    }
-
-    private static int getGroupDayColumn(List<Integer> groupDayColumns, List<RowData> rows, Color groupColor) {
-        for (RowData row : rows) {
-
-            if (isRowEmpty(row)) continue;
-
-            for (int column : groupDayColumns) {
-                if (column > row.getValues().size()) continue;
-
-                CellData cell = row.getValues().get(column);
-
-                if (!hasBackground(cell)) continue;
-
-                ColorWrapper bgColor = new CellWrapper(cell).getBgColor();
-                if (bgColor.equals(new ColorWrapper(groupColor))) {
-                    return column;
-                }
-            }
-        }
-        return -1;
-    }
-
-    private static void setGroupComments(GroupWeeklyReport groupWeeklyReport, String groupNote) {
-
-        if (groupNote != null && !groupNote.isEmpty()) {
-            String firstString = groupNote.split("\\n")[0];
-            if (firstString.matches("[0-9]+[%]")) {
-                groupWeeklyReport.setPercents(firstString);
-                String comment = groupNote
-                        .substring(groupNote.indexOf(firstString), groupNote.length());
-                groupWeeklyReport.setGroupComments(comment.trim());
-            } else {
-                groupWeeklyReport.setGroupComments(groupNote);
-            }
-        }
-    }
-
     public static class Builder
     {
         private GroupTableData groupTableData;
@@ -193,4 +109,6 @@ public class WeeklyReportGenerator
             return new WeeklyReportGenerator(this);
         }
     }
+
+
 }

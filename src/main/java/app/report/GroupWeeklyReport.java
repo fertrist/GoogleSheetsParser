@@ -1,9 +1,10 @@
 package app.report;
 
-import app.entities.Person;
-import app.entities.Category;
 import app.entities.Action;
+import app.entities.Category;
+import app.entities.Person;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,11 +17,20 @@ public class GroupWeeklyReport {
     private LocalDate end;
     private String percents;
     private String groupComments;
+    private DayOfWeek groupDay;
 
     private List<Person> whiteList = new ArrayList<>();
     private List<ReportItem> reportItems = new ArrayList<>();
 
     public GroupWeeklyReport() {}
+
+    public DayOfWeek getGroupDay() {
+        return groupDay;
+    }
+
+    public void setGroupDay(DayOfWeek groupDay) {
+        this.groupDay = groupDay;
+    }
 
     public List<Person> getWhiteList() {
         return whiteList;
@@ -59,6 +69,11 @@ public class GroupWeeklyReport {
                 && Arrays.asList(categories).contains(i.getPerson().getCategory())).collect(Collectors.toList());
     }
 
+    public LocalDate getGroupDate()
+    {
+        int groupDayOrdinal = groupDay.ordinal();
+        return getStart().plusDays(groupDayOrdinal - 1);
+    }
 
     public int getMeetingWhite()
     {
