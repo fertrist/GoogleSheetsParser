@@ -8,6 +8,7 @@ import app.data.ColumnDateMapper;
 import app.data.GroupTableData;
 import app.entities.CellWrapper;
 import app.entities.ColorWrapper;
+import app.entities.GroupMeetingNotes;
 import app.report.GroupWeeklyReport;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.Color;
@@ -26,40 +27,57 @@ public class BlankWeeklyReportGenerator
         this.groupTableData = groupTableData;
     }
 
-    public List<GroupWeeklyReport> getWeeksForDates(LocalDate start, LocalDate end) {
-        List<GroupWeeklyReport> groupWeeklyReports = getWeeksFromDates(start, end);
-        groupWeeklyReports.forEach(this::setCommentsAndNotes);
-        return groupWeeklyReports;
+    public List<GroupWeeklyReport> getWeeksBetweenStartEnd(LocalDate start, LocalDate end)
+    {
+        List<GroupWeeklyReport> blankWeeklyReports = getWeeksBetweenStartEndDates(start, end);
+
+        blankWeeklyReports.forEach(weeklyReport ->
+        {
+            GroupMeetingNotes groupMeetingNotes = getGroupMeetingNotes(weeklyReport.getGroupDate());
+            weeklyReport.setPercents(groupMeetingNotes.getPercentage());
+            weeklyReport.setGroupComments(groupMeetingNotes.getComments());
+        });
+
+        return blankWeeklyReports;
     }
 
-
-    private void setCommentsAndNotes(GroupWeeklyReport groupWeeklyReport)
+    private GroupMeetingNotes getGroupMeetingNotes(LocalDate groupDate)
     {
-        ColumnDateMapper columnDateMapper = groupTableData.getColumnDateMapper();
+        String note = getGroupNote(groupDate);
+        return GroupMeetingNotes.fromNote(note);
+    }
 
+    private String getGroupNote(LocalDate groupDate)
+    {
+        int groupColumn = getColumnForGroupMeeting(groupDate);
 
-
-        LocalDate groupDate = groupWeeklyReport.getGroupDate();
-
-        List<Integer> groupDayColumns = columnDateMapper.getColumnsForDate(groupDate);
-
-        int groupColumn = getGroupDayColumn(groupDayColumns);
+        String note = null;
 
         if (groupColumn != -1)
         {
-            List<CellData> daysCells = getRowWithDays().getValues();
-            List<CellData> datesCells = getRowWithDates().getValues();
-
-            CellData dayCell = daysCells.get(groupColumn);
-            CellData dateCell = datesCells.get(groupColumn);
-
-            String groupNote = dayCell.getNote();
-            groupNote = groupNote != null ? groupNote : dateCell.getNote();
-
-            setGroupComments(groupWeeklyReport, groupNote);
+            note = getNoteFromDateOrDayCell(groupColumn);
         }
+        return note;
+    }
 
+    private String getNoteFromDateOrDayCell(int groupColumn)
+    {
+        List<CellData> daysCells = getRowWithDays().getValues();
+        List<CellData> datesCells = getRowWithDates().getValues();
 
+        CellData dayCell = daysCells.get(groupColumn);
+        CellData dateCell = datesCells.get(groupColumn);
+
+        return dayCell.getNote() != null ? dayCell.getNote() : dateCell.getNote();
+    }
+
+    private int getColumnForGroupMeeting(LocalDate dateWhenGroupMeets)
+    {
+        ColumnDateMapper columnDateMapper = groupTableData.getColumnDateMapper();
+
+        List<Integer> groupDayColumns = columnDateMapper.getColumnsFor(dateWhenGroupMeets);
+
+        return getGroupDayColumn(groupDayColumns);
     }
 
     private RowData getRowWithDays()
@@ -80,24 +98,12 @@ public class BlankWeeklyReportGenerator
         return colorActionMapper.getColorForAction(GROUP);
     }
 
-    private static void setGroupComments(GroupWeeklyReport groupWeeklyReport, String groupNote) {
-
-        if (groupNote != null && !groupNote.isEmpty()) {
-            String firstString = groupNote.split("\\n")[0];
-            if (firstString.matches("[0-9]+[%]")) {
-                groupWeeklyReport.setPercents(firstString);
-                String comment = groupNote
-                        .substring(groupNote.indexOf(firstString), groupNote.length());
-                groupWeeklyReport.setGroupComments(comment.trim());
-            } else {
-                groupWeeklyReport.setGroupComments(groupNote);
-            }
-        }
-    }
-
-    private List<GroupWeeklyReport> getWeeksFromDates(LocalDate start, LocalDate end) {
+    private List<GroupWeeklyReport> getWeeksBetweenStartEndDates(LocalDate start, LocalDate end)
+    {
         List<GroupWeeklyReport> groupWeeklyReports = new ArrayList<>();
-        for (LocalDate tmp = start; tmp.isBefore(end) || tmp.isEqual(end); tmp = tmp.plusWeeks(1)) {
+
+        for (LocalDate tmp = start; tmp.isBefore(end) || tmp.isEqual(end); tmp = tmp.plusWeeks(1))
+        {
             GroupWeeklyReport groupWeeklyReport = new GroupWeeklyReport();
             groupWeeklyReport.setStart(tmp);
             groupWeeklyReport.setEnd(tmp.plusDays(6));

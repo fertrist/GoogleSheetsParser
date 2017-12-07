@@ -129,4 +129,9 @@ public class GroupWeeklyReport {
     public List<ReportItem> getReportItems() {
         return reportItems;
     }
+
+    public void setReportItems(List<ReportItem> reportItems)
+    {
+        this.reportItems.addAll(reportItems);
+    }
 }

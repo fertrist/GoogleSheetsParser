@@ -58,7 +58,7 @@ public class ColumnDateMapper
         return columnToDateMap.get(column);
     }
 
-    public List<Integer> getColumnsForDate(LocalDate date)
+    public List<Integer> getColumnsFor(LocalDate date)
     {
         List<Integer> columns = new ArrayList<>();
         for (Map.Entry<Integer, LocalDate> entry : columnToDateMap.entrySet()) {

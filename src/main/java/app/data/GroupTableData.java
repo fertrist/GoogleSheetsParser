@@ -1,5 +1,6 @@
 package app.data;
 
+import app.entities.Category;
 import app.entities.Group;
 import app.entities.Person;
 import app.report.ReportRange;
@@ -7,6 +8,7 @@ import com.google.api.services.sheets.v4.model.GridRange;
 import com.google.api.services.sheets.v4.model.RowData;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class GroupTableData
 {
@@ -102,5 +104,14 @@ public class GroupTableData
 
     public void setPeople(List<Person> people) {
         this.people = people;
+    }
+
+    // TODO initialize white list once rather then for every week
+    public List<Person> getWhiteList()
+    {
+        return people.stream()
+            .filter(p -> p.getCategory() == Category.WHITE)
+            .map(Person::clone)
+            .collect(Collectors.toList());
     }
 }

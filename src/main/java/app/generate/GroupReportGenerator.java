@@ -1,11 +1,14 @@
 package app.generate;
 
+import static app.conf.Configuration.getReportEndDate;
+import static app.conf.Configuration.getReportStartDate;
 import app.dao.GroupSheetApi;
 import app.entities.Group;
 import app.report.GroupReport;
 import app.report.GroupWeeklyReport;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 public class GroupReportGenerator
@@ -34,19 +37,20 @@ public class GroupReportGenerator
     private List<GroupWeeklyReport> generateGroupWeeklyReports() throws IOException
     {
         System.out.println("Processing " + group.getLeaderName() + "'s group.");
-        return generateWeeklyReports();
+
+        LocalDate reportStart = LocalDate.parse(getReportStartDate());
+        LocalDate reportEnd = LocalDate.parse(getReportEndDate());
+
+        return generateWeeklyReports(reportStart, reportEnd);
     }
 
-    private List<GroupWeeklyReport> generateWeeklyReports() throws IOException
+    private List<GroupWeeklyReport> generateWeeklyReports(LocalDate reportStart, LocalDate reportEnd) throws IOException
     {
         GroupSheetApi groupSheetApi = new GroupSheetApi(group);
 
-        WeeklyReportGenerator weeklyReportGenerator = WeeklyReportGenerator.builder()
-                .withGroupTableData(groupSheetApi.getGroupTableData())
-                .build();
+        WeeklyReportGenerator weeklyReportGenerator = new WeeklyReportGenerator(groupSheetApi.getGroupTableData());
 
-        return weeklyReportGenerator.generateWeeklyReports();
-
+        return weeklyReportGenerator.generateWeeklyReportsForReportStartEnd(reportStart, reportEnd);
     }
 
 }

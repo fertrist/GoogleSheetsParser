@@ -45,4 +45,11 @@ public class ReportItem {
                 ", date='" + date + '\'' +
                 '}';
     }
+
+    public boolean isWithinWeekDateRange(GroupWeeklyReport weeklyReport)
+    {
+        LocalDate start = weeklyReport.getStart();
+        LocalDate end = weeklyReport.getEnd();
+        return (date.isAfter(start) || date.isEqual(start)) && (date.isBefore(end) || date.isEqual(end));
+    }
 }
