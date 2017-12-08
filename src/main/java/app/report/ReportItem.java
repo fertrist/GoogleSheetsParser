@@ -11,9 +11,12 @@ public class ReportItem {
     private Person person;
     private LocalDate date;
 
-    public ReportItem(Person person, Action action, LocalDate date) {
+    public ReportItem(Action action, LocalDate date) {
         this.action = action;
         this.date = date;
+    }
+
+    public void setPerson(Person person) {
         this.person = person;
     }
 

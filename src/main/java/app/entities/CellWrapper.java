@@ -41,6 +41,5 @@ public class CellWrapper
         CellFormat effectiveFormat = cellData.getEffectiveFormat();
         Color color = effectiveFormat != null ? effectiveFormat.getBackgroundColor() : null;
         return new ColorWrapper(color);
-
     }
 }

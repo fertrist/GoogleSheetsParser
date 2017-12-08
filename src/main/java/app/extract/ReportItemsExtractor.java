@@ -1,10 +1,10 @@
 package app.extract;
 
-import static app.extract.ReportUtil.hasBackground;
 import app.data.ColorActionMapper;
 import app.data.ColumnDateMapper;
 import app.data.GroupTableData;
 import app.entities.Action;
+import app.entities.CellWrapper;
 import app.entities.Person;
 import app.report.ReportItem;
 import com.google.api.services.sheets.v4.model.CellData;
@@ -44,31 +44,41 @@ public class ReportItemsExtractor
 
     private List<ReportItem> extractPersonItemsFromRow(RowData personRow, Person person)
     {
-        ColumnDateMapper columnDateMapper = groupTableData.getColumnDateMapper();
-        ColorActionMapper colorActionMapper = groupTableData.getColorActionMapper();
-
         List<CellData> personCells = personRow.getValues();
 
         List<ReportItem> reportItems = new ArrayList<>();
-
-        for (int i = 0; i < personCells.size(); i++)
+        for (int cellColumn = 0; cellColumn < personCells.size(); cellColumn++)
         {
-            CellData cell = personCells.get(i);
+            CellData cell = personCells.get(cellColumn);
 
-            if (!hasBackground(cell)) continue;
-
-            Color bgColor = cell.getEffectiveFormat().getBackgroundColor();
-
-
-            Action action = colorActionMapper.getActionByColor(bgColor);
-
-            if (action != null)
+            ReportItem reportItem = getReportItemForCell(cell, cellColumn);
+            if (reportItem != null)
             {
-                LocalDate date = columnDateMapper.dateForColumn(i);
-                reportItems.add(new ReportItem(person.clone(), action, date));
+                reportItem.setPerson(person.clone());
+                reportItems.add(reportItem);
             }
         }
         return reportItems;
+    }
+
+    private ReportItem getReportItemForCell(CellData cellData, int cellColumn)
+    {
+        LocalDate date = getDateForColumn(cellColumn);
+        Action action = getActionByCellBackground(cellData);
+        return action != null ? new ReportItem(action, date) : null;
+    }
+
+    private LocalDate getDateForColumn(int column)
+    {
+        ColumnDateMapper columnDateMapper = groupTableData.getColumnDateMapper();
+        return columnDateMapper.dateForColumn(column);
+    }
+
+    private Action getActionByCellBackground(CellData cellData)
+    {
+        Color bgColor = new CellWrapper(cellData).getBgColor().getColor();
+        ColorActionMapper colorActionMapper = groupTableData.getColorActionMapper();
+        return bgColor != null ? colorActionMapper.getActionByColor(bgColor) : null;
     }
 
     private RowData getPersonRow(List<RowData> dataRows, Person person)

@@ -12,6 +12,7 @@ import app.report.ReportItem;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class WeeklyReportGenerator
 {
@@ -30,38 +31,66 @@ public class WeeklyReportGenerator
         WeeklyReportBuilder weeklyReportBuilder = new WeeklyReportBuilder(groupTableData, groupWeeklyReports);
         groupWeeklyReports = weeklyReportBuilder.fillWeeksWithItems();
 
-        handleAddedRemovedToList(groupWeeklyReports);
+        GroupWeeklyReport lastGroupWeeklyReport = getLastWeeklyReport(groupWeeklyReports);
+        adjustAddedRemovedPeople(lastGroupWeeklyReport);
 
         return groupWeeklyReports;
     }
 
-    private void handleAddedRemovedToList(List<GroupWeeklyReport> groupWeeklyReports) {
+    private void adjustAddedRemovedPeople(GroupWeeklyReport lastGroupWeeklyReport) {
+        groupTableData.getPeople().forEach(person -> adjustPersonInWhiteList(person, lastGroupWeeklyReport.getWhiteList()));
+        lastGroupWeeklyReport.getReportItems().forEach(this::adjustReportItem);
+    }
 
-        GroupWeeklyReport groupWeeklyReport = groupWeeklyReports.get(groupWeeklyReports.size() - 1);
-
+    private void adjustReportItem(ReportItem reportItem)
+    {
         Group group = groupTableData.getGroup();
-        List<Person> people = groupTableData.getPeople();
 
-        for (Person person : people)
+        String personName = trimAndLowerCase(reportItem.getPerson().getName());
+
+        if (toLowerCase(group.getAddedPeople()).contains(personName))
         {
-            if (containsIgnoreCase(group.getAddedPeople(), person.getName())) {
-                Person updated = person.clone();
-                updated.setCategory(Category.WHITE);
-                groupWeeklyReport.getWhiteList().add(updated);
-            }
-            else if (containsIgnoreCase(group.getRemovedPeople(), person.getName())) {
-                Person updated = person.clone();
-                groupWeeklyReport.getWhiteList().remove(updated);
-                updated.setCategory(Category.NEW);
-            }
+            reportItem.getPerson().setCategory(Category.WHITE);
         }
-        for (ReportItem reportItem : groupWeeklyReport.getReportItems()) {
-            if (containsIgnoreCase(group.getAddedPeople(), reportItem.getPerson().getName())) {
-                reportItem.getPerson().setCategory(Category.WHITE);
-            }
-            if (containsIgnoreCase(group.getRemovedPeople(), reportItem.getPerson().getName())) {
-                reportItem.getPerson().setCategory(Category.NEW);
-            }
+        if (toLowerCase(group.getRemovedPeople()).contains(personName))
+        {
+            reportItem.getPerson().setCategory(Category.NEW);
         }
+    }
+
+    private void adjustPersonInWhiteList(Person person, List<Person> whiteList)
+    {
+        Group group = groupTableData.getGroup();
+
+        Person updated = person.clone();
+
+        Category category = null;
+        if (containsIgnoreCase(group.getAddedPeople(), person.getName()))
+        {
+            category = Category.WHITE;
+            whiteList.add(updated);
+        }
+        else if (containsIgnoreCase(group.getRemovedPeople(), person.getName()))
+        {
+            whiteList.remove(updated);
+            category = Category.NEW;
+        }
+        updated.setCategory(category);
+    }
+
+    private List<String> toLowerCase(List<String> stringList)
+    {
+        return stringList.stream().map(String::toLowerCase).collect(Collectors.toList());
+    }
+
+    private String trimAndLowerCase(String string)
+    {
+        return string.replaceAll("\\s+", " ").replaceAll("\\(.*\\)|\\d", "").trim();
+
+    }
+
+    private GroupWeeklyReport getLastWeeklyReport(List<GroupWeeklyReport> groupWeeklyReports)
+    {
+        return groupWeeklyReports.get(groupWeeklyReports.size() - 1);
     }
 }
