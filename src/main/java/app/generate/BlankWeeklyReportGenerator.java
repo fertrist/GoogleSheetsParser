@@ -2,21 +2,21 @@ package app.generate;
 
 import static app.entities.Action.GROUP;
 import static app.extract.ReportUtil.hasBackground;
-import static app.extract.ReportUtil.isRowEmpty;
 import app.data.ColorActionMapper;
 import app.data.ColumnDateMapper;
 import app.data.GroupTableData;
 import app.entities.CellWrapper;
 import app.entities.ColorWrapper;
 import app.entities.GroupMeetingNotes;
+import app.extract.ReportUtil;
 import app.report.GroupWeeklyReport;
 import com.google.api.services.sheets.v4.model.CellData;
-import com.google.api.services.sheets.v4.model.Color;
 import com.google.api.services.sheets.v4.model.RowData;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BlankWeeklyReportGenerator
 {
@@ -49,18 +49,11 @@ public class BlankWeeklyReportGenerator
 
     private String getGroupNote(LocalDate groupDate)
     {
-        int groupColumn = getColumnForGroupMeeting(groupDate);
-
-        String note = null;
-
-        if (groupColumn != -1)
-        {
-            note = getNoteFromDateOrDayCell(groupColumn);
-        }
-        return note;
+        Integer groupColumn = getGroupColumn(groupDate);
+        return groupColumn != null ? getNoteFromGroupColumn(groupColumn) : null;
     }
 
-    private String getNoteFromDateOrDayCell(int groupColumn)
+    private String getNoteFromGroupColumn(int groupColumn)
     {
         List<CellData> daysCells = getRowWithDays().getValues();
         List<CellData> datesCells = getRowWithDates().getValues();
@@ -71,13 +64,44 @@ public class BlankWeeklyReportGenerator
         return dayCell.getNote() != null ? dayCell.getNote() : dateCell.getNote();
     }
 
-    private int getColumnForGroupMeeting(LocalDate dateWhenGroupMeets)
+    private Integer getGroupColumn(LocalDate groupDate)
     {
         ColumnDateMapper columnDateMapper = groupTableData.getColumnDateMapper();
+        List<Integer> columnsForGroupDate = columnDateMapper.getColumnsFor(groupDate);
 
-        List<Integer> groupDayColumns = columnDateMapper.getColumnsFor(dateWhenGroupMeets);
+        return getGroupColumn(columnsForGroupDate);
+    }
 
-        return getGroupDayColumn(groupDayColumns);
+    private Integer getGroupColumn(List<Integer> groupDayColumns) {
+
+        List<RowData> notEmptyRows = groupTableData.getData().stream().filter(ReportUtil::isRowEmpty).collect(Collectors.toList());
+
+        Integer groupColumn = null;
+
+        for (RowData row : notEmptyRows)
+        {
+            groupColumn = getGroupDayColumnByBackGround(row, groupDayColumns);
+        }
+        return groupColumn;
+    }
+
+    private Integer getGroupDayColumnByBackGround(RowData row, List<Integer> groupDayColumns)
+    {
+        for (Integer column : groupDayColumns)
+        {
+            if (column > row.getValues().size()) continue;
+
+            CellData cell = row.getValues().get(column);
+
+            if (!hasBackground(cell)) continue;
+
+            ColorWrapper bgColor = new CellWrapper(cell).getBgColor();
+            if (bgColor.equals(getGroupActionColor()))
+            {
+                return column;
+            }
+        }
+        return null;
     }
 
     private RowData getRowWithDays()
@@ -92,10 +116,10 @@ public class BlankWeeklyReportGenerator
         return groupTableData.getData().get(rowWithDates);
     }
 
-    private Color getGroupActionColor()
+    private ColorWrapper getGroupActionColor()
     {
         ColorActionMapper colorActionMapper = groupTableData.getColorActionMapper();
-        return colorActionMapper.getColorForAction(GROUP);
+        return new ColorWrapper(colorActionMapper.getColorForAction(GROUP));
     }
 
     private List<GroupWeeklyReport> getWeeksBetweenStartEndDates(LocalDate start, LocalDate end)
@@ -110,27 +134,5 @@ public class BlankWeeklyReportGenerator
             groupWeeklyReports.add(groupWeeklyReport);
         }
         return groupWeeklyReports;
-    }
-
-    private int getGroupDayColumn(List<Integer> groupDayColumns) {
-
-        for (RowData row : groupTableData.getData()) {
-
-            if (isRowEmpty(row)) continue;
-
-            for (int column : groupDayColumns) {
-                if (column > row.getValues().size()) continue;
-
-                CellData cell = row.getValues().get(column);
-
-                if (!hasBackground(cell)) continue;
-
-                ColorWrapper bgColor = new CellWrapper(cell).getBgColor();
-                if (bgColor.equals(new ColorWrapper(getGroupActionColor()))) {
-                    return column;
-                }
-            }
-        }
-        return -1;
     }
 }
