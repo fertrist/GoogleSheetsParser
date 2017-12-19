@@ -81,7 +81,7 @@ public class CustomSheetApi {
     public List<RowData> getRowsData(String spreadsheetId, ReportRange reportRange) throws IOException {
         String start = columnToLetter(reportRange.getStart().getColumn()) + reportRange.getStart().getRow();
 
-        String end = columnToLetter(reportRange.getEnd().getColumn()) + reportRange.getStart().getRow();
+        String end = columnToLetter(reportRange.getEnd().getColumn()) + reportRange.getEnd().getRow();
         String dataRange = start + ":" + end;
 
         System.out.println("Fetching data : " + dataRange);

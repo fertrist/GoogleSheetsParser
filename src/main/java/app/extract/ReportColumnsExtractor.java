@@ -75,7 +75,7 @@ public class ReportColumnsExtractor
     }
 
     private int getColumnForReportEndDay(List<CellData> dateCells, int start, int end) {
-        int dateCellIndex = end - 2; // -1 because of indexing and -1 because end is exclusive
+        int dateCellIndex = end - 1; // -1 because of indexing
         while (dateCellIndex >= start) {
             if (dateCells.get(dateCellIndex).size() == 0 || dateCells.get(dateCellIndex).getEffectiveValue() == null) {
                 dateCellIndex--;

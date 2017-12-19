@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ListIterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GroupTableDataExtractor
@@ -28,10 +30,7 @@ public class GroupTableDataExtractor
     public List<ReportMonth> extractMonthsRequiredForReport()
     {
         List<ReportMonth> monthsFromTable = extractAllMonthsFromGroupTable();
-
-        List<ReportMonth> coveredMonths = getCoveredMonths(monthsFromTable);
-
-        return coveredMonths;
+        return getCoveredMonths(monthsFromTable);
     }
 
     private List<ReportMonth> extractAllMonthsFromGroupTable()
@@ -67,32 +66,26 @@ public class GroupTableDataExtractor
         return combineMonthData(month, gridRange);
     }
 
-    private static List<ReportMonth> getCoveredMonths(List<ReportMonth> monthsFromTable) {
+    private List<ReportMonth> getCoveredMonths(List<ReportMonth> monthsFromTable) {
 
         LocalDate reportStartDate = LocalDate.parse(getReportStartDate());
         LocalDate reportEndDate = LocalDate.parse(getReportEndDate());
 
         List<ReportUtil.Month> coveredMonths = getMonthsFromRange(reportStartDate, reportEndDate);
 
-        List<ReportMonth> coveredReportMonths = monthsFromTable.stream()
+        Map<ReportUtil.Month, ReportMonth> nonReapeatedMonths = monthsFromTable.stream()
                 .filter(reportMonth -> coveredMonths.contains(reportMonth.getMonth()))
+                .collect(Collectors.toMap(ReportMonth::getMonth,
+                        Function.<ReportMonth>identity(), BinaryOperator.maxBy(byStartDate())));
+
+        return nonReapeatedMonths.values().stream()
                 .sorted((prev, next) -> Integer.compare(prev.getStart(), next.getStart()))
                 .collect(Collectors.toList());
+    }
 
-        // TODO this code doesn't work
-        // clean month which have same name but are outside the range
-        ListIterator<ReportMonth> iterator = coveredReportMonths.listIterator();
-        int previousEnd = 0;
-        while (iterator.hasNext()) {
-            ReportMonth nextMonth = iterator.next();
-            if (nextMonth.getStart() < previousEnd) {
-                iterator.remove();
-            } else {
-                previousEnd = nextMonth.getEnd();
-            }
-        }
-
-        return coveredReportMonths;
+    private Comparator<ReportMonth> byStartDate()
+    {
+        return (m1, m2)-> Integer.compare(m1.getStart(), m2.getStart());
     }
 
     private static List<ReportUtil.Month> getMonthsFromRange(LocalDate startDate, LocalDate endDate)
