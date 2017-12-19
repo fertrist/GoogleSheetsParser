@@ -62,7 +62,7 @@ public class GroupTableDataExtractor
 
         String monthName = getStringValueFromCell(mergeFirstCell);
 
-        ReportUtil.Month month = constructMonthFromName(monthName);
+        ReportUtil.Month month = (monthName != null && !monthName.isEmpty()) ? constructMonthFromName(monthName) : null;
 
         return combineMonthData(month, gridRange);
     }
@@ -74,15 +74,18 @@ public class GroupTableDataExtractor
 
         List<ReportUtil.Month> coveredMonths = getMonthsFromRange(reportStartDate, reportEndDate);
 
-        List<ReportMonth> coveredReportMonths = monthsFromTable.stream().filter(reportMonth -> coveredMonths.contains(reportMonth.getMonth())).collect(Collectors.toList());
+        List<ReportMonth> coveredReportMonths = monthsFromTable.stream()
+                .filter(reportMonth -> coveredMonths.contains(reportMonth.getMonth()))
+                .sorted((prev, next) -> Integer.compare(prev.getStart(), next.getStart()))
+                .collect(Collectors.toList());
 
+        // TODO this code doesn't work
         // clean month which have same name but are outside the range
         ListIterator<ReportMonth> iterator = coveredReportMonths.listIterator();
         int previousEnd = 0;
         while (iterator.hasNext()) {
             ReportMonth nextMonth = iterator.next();
-            int nextStart = nextMonth.getStart();
-            if (nextStart < previousEnd) {
+            if (nextMonth.getStart() < previousEnd) {
                 iterator.remove();
             } else {
                 previousEnd = nextMonth.getEnd();
@@ -99,6 +102,7 @@ public class GroupTableDataExtractor
         while (lessOrEqual(startDate, endDate)) {
             ReportUtil.Month monthFromRange = convertToLocalMonth(startDate.getMonth());
             coveredMonths.add(monthFromRange);
+            startDate = addOneDay(startDate);
         }
 
         return coveredMonths.stream().collect(Collectors.toList());
@@ -107,8 +111,7 @@ public class GroupTableDataExtractor
     private static ReportUtil.Month convertToLocalMonth(java.time.Month month)
     {
         int monthNumber = month.ordinal();
-        return ReportUtil.Month.values()[monthNumber - 1];
-
+        return ReportUtil.Month.values()[monthNumber];
     }
 
     private static LocalDate addOneDay(LocalDate date)

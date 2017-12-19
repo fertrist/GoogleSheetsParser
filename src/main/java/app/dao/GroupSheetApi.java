@@ -136,7 +136,7 @@ public class GroupSheetApi
 
     private List<RowData> getSheetRows()
     {
-        return sheet.getData().get(0).getRowData();
+        return getGroupSheet().getData().get(0).getRowData();
     }
 
     public static void setSheetApi(CustomSheetApi sheetApi)

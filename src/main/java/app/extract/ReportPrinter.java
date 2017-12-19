@@ -53,7 +53,7 @@ public class ReportPrinter
     /**
      * Reports all regionReports to report sheet.
      */
-    private static void report(Sheets service, List<RegionReport> regionReports) throws IOException {
+    public static void printReports(Sheets service, List<RegionReport> regionReports) throws IOException {
         Integer sheetGid = getSheetGid(getProperty(REPORT_SPREADSHEET_URL));
 
         UpdateCellsRequest updateHeaderRequest = new UpdateCellsRequest();

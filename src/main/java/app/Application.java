@@ -1,10 +1,11 @@
 package app;
 
+import app.conf.SheetsApp;
 import app.dao.CustomSheetApi;
 import app.dao.GroupSheetApi;
-import app.report.RegionReport;
-import app.conf.SheetsApp;
+import app.extract.ReportPrinter;
 import app.generate.ReportGenerator;
+import app.report.RegionReport;
 import com.google.api.services.sheets.v4.Sheets;
 
 import java.io.IOException;
@@ -22,10 +23,10 @@ public class Application {
         CustomSheetApi sheetApi = new CustomSheetApi(sheetsService);
         GroupSheetApi.setSheetApi(sheetApi);
 
-        // TODO collect metadata into wrapper
-
         ReportGenerator reportGenerator = new ReportGenerator();
-        List<RegionReport> regionReportReports = reportGenerator.collectRegionReports();
+        List<RegionReport> reports = reportGenerator.collectRegionReports();
+
+        ReportPrinter.printReports(sheetsService, reports);
     }
 
 }

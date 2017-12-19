@@ -16,6 +16,7 @@ import com.google.api.services.sheets.v4.model.RowData;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class BlankWeeklyReportGenerator
@@ -29,22 +30,25 @@ public class BlankWeeklyReportGenerator
 
     public List<GroupWeeklyReport> getWeeksBetweenStartEnd(LocalDate start, LocalDate end)
     {
-        List<GroupWeeklyReport> blankWeeklyReports = getWeeksBetweenStartEndDates(start, end);
+        List<GroupWeeklyReport> blankWeeklyReports = getBlankWeeksBetweenStartEndDates(start, end);
 
         blankWeeklyReports.forEach(weeklyReport ->
         {
-            GroupMeetingNotes groupMeetingNotes = getGroupMeetingNotes(weeklyReport.getGroupDate());
-            weeklyReport.setPercents(groupMeetingNotes.getPercentage());
-            weeklyReport.setGroupComments(groupMeetingNotes.getComments());
+            Optional<GroupMeetingNotes> groupMeetingNotes = getGroupMeetingNotes(weeklyReport.getGroupDate());
+            groupMeetingNotes.ifPresent(notes ->
+            {
+                weeklyReport.setPercents(notes.getPercentage());
+                weeklyReport.setGroupComments(notes.getComments());
+            });
         });
 
         return blankWeeklyReports;
     }
 
-    private GroupMeetingNotes getGroupMeetingNotes(LocalDate groupDate)
+    private Optional<GroupMeetingNotes> getGroupMeetingNotes(LocalDate groupDate)
     {
         String note = getGroupNote(groupDate);
-        return GroupMeetingNotes.fromNote(note);
+        return Optional.ofNullable(note != null ? GroupMeetingNotes.fromNote(note) : null);
     }
 
     private String getGroupNote(LocalDate groupDate)
@@ -122,7 +126,7 @@ public class BlankWeeklyReportGenerator
         return new ColorWrapper(colorActionMapper.getColorForAction(GROUP));
     }
 
-    private List<GroupWeeklyReport> getWeeksBetweenStartEndDates(LocalDate start, LocalDate end)
+    private List<GroupWeeklyReport> getBlankWeeksBetweenStartEndDates(LocalDate start, LocalDate end)
     {
         List<GroupWeeklyReport> groupWeeklyReports = new ArrayList<>();
 
@@ -132,6 +136,7 @@ public class BlankWeeklyReportGenerator
             groupWeeklyReport.setStart(tmp);
             groupWeeklyReport.setEnd(tmp.plusDays(6));
             groupWeeklyReports.add(groupWeeklyReport);
+            groupWeeklyReport.setGroupDay(groupTableData.getGroup().getGroupDay());
         }
         return groupWeeklyReports;
     }
