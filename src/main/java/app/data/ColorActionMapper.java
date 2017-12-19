@@ -1,6 +1,6 @@
 package app.data;
 
-import app.entities.Action;
+import app.entities.EventType;
 import app.entities.ColorWrapper;
 import com.google.api.services.sheets.v4.model.Color;
 
@@ -8,9 +8,9 @@ import java.util.Map;
 
 public class ColorActionMapper
 {
-    private Map<Action, Color> colors;
+    private Map<EventType, Color> colors;
 
-    public ColorActionMapper(Map<Action, Color> colors) {
+    public ColorActionMapper(Map<EventType, Color> colors) {
         this.colors = colors;
     }
 
@@ -18,8 +18,8 @@ public class ColorActionMapper
      * By cell background get kind of action (meeting, visit, call)
      * @param color cell background
      */
-    public Action getActionByColor(Color color) {
-        for (Map.Entry<Action, Color> e : colors.entrySet()) {
+    public EventType getActionByColor(Color color) {
+        for (Map.Entry<EventType, Color> e : colors.entrySet()) {
             if (new ColorWrapper(e.getValue()).equals(new ColorWrapper(color))) {
                 return e.getKey();
             }
@@ -27,8 +27,8 @@ public class ColorActionMapper
         return null;
     }
 
-    public Color getColorForAction(Action action)
+    public Color getColorForAction(EventType eventType)
     {
-        return colors.get(action);
+        return colors.get(eventType);
     }
 }

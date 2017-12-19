@@ -37,19 +37,15 @@ public class GroupReportGenerator
     private List<GroupWeeklyReport> generateGroupWeeklyReports() throws IOException
     {
         System.out.println("Processing " + group.getLeaderName() + "'s group.");
-
         LocalDate reportStart = LocalDate.parse(getReportStartDate());
         LocalDate reportEnd = LocalDate.parse(getReportEndDate());
-
         return generateWeeklyReports(reportStart, reportEnd);
     }
 
     private List<GroupWeeklyReport> generateWeeklyReports(LocalDate reportStart, LocalDate reportEnd) throws IOException
     {
         GroupSheetApi groupSheetApi = new GroupSheetApi(group);
-
         WeeklyReportGenerator weeklyReportGenerator = new WeeklyReportGenerator(groupSheetApi.getGroupTableData());
-
         return weeklyReportGenerator.generateWeeklyReportsForReportStartEnd(reportStart, reportEnd);
     }
 

@@ -7,7 +7,7 @@ import app.entities.Group;
 import app.entities.Person;
 import app.extract.WeeklyReportBuilder;
 import app.report.GroupWeeklyReport;
-import app.report.ReportItem;
+import app.report.Event;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -39,22 +39,22 @@ public class WeeklyReportGenerator
 
     private void adjustAddedRemovedPeople(GroupWeeklyReport lastGroupWeeklyReport) {
         groupTableData.getPeople().forEach(person -> adjustPersonInWhiteList(person, lastGroupWeeklyReport.getWhiteList()));
-        lastGroupWeeklyReport.getReportItems().forEach(this::adjustReportItem);
+        lastGroupWeeklyReport.getEvents().forEach(this::adjustReportItem);
     }
 
-    private void adjustReportItem(ReportItem reportItem)
+    private void adjustReportItem(Event event)
     {
         Group group = groupTableData.getGroup();
 
-        String personName = trimAndLowerCase(reportItem.getPerson().getName());
+        String personName = trimAndLowerCase(event.getPerson().getName());
 
         if (toLowerCase(group.getAddedPeople()).contains(personName))
         {
-            reportItem.getPerson().setCategory(Category.WHITE);
+            event.getPerson().setCategory(Category.WHITE);
         }
         if (toLowerCase(group.getRemovedPeople()).contains(personName))
         {
-            reportItem.getPerson().setCategory(Category.NEW);
+            event.getPerson().setCategory(Category.NEW);
         }
     }
 

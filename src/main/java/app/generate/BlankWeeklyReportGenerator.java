@@ -1,6 +1,6 @@
 package app.generate;
 
-import static app.entities.Action.GROUP;
+import static app.entities.EventType.GROUP;
 import static app.extract.ReportUtil.hasBackground;
 import app.data.ColorActionMapper;
 import app.data.ColumnDateMapper;

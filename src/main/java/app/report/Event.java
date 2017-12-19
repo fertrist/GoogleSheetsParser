@@ -1,22 +1,22 @@
 package app.report;
 
+import app.entities.EventType;
 import app.entities.Person;
-import app.entities.Action;
 
 import java.time.LocalDate;
 
-public class ReportItem {
+public class Event {
 
-    private Action action;
+    private EventType eventType;
     private Person person;
     private LocalDate date;
 
-    public ReportItem(Action action) {
-        this.action = action;
+    public Event(EventType eventType) {
+        this.eventType = eventType;
     }
 
-    public ReportItem(Action action, LocalDate date) {
-        this.action = action;
+    public Event(EventType eventType, LocalDate date) {
+        this.eventType = eventType;
         this.date = date;
     }
 
@@ -24,12 +24,12 @@ public class ReportItem {
         this.person = person;
     }
 
-    public Action getAction() {
-        return action;
+    public EventType getEventType() {
+        return eventType;
     }
 
-    public void setAction(Action action) {
-        this.action = action;
+    public void setEventType(EventType eventType) {
+        this.eventType = eventType;
     }
 
     public Person getPerson() {
@@ -46,8 +46,8 @@ public class ReportItem {
 
     @Override
     public String toString() {
-        return "ReportItem{" +
-                "action=" + action +
+        return "Event{" +
+                "eventType=" + eventType +
                 ", person=" + person +
                 ", date='" + date + '\'' +
                 '}';

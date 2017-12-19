@@ -1,8 +1,8 @@
 package app.extract;
 
 import app.data.GroupTableData;
+import app.report.Event;
 import app.report.GroupWeeklyReport;
-import app.report.ReportItem;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -23,9 +23,9 @@ public class WeeklyReportBuilder
     {
         updateWeeksWithWhiteList();
 
-        List<ReportItem> reportItems = new ReportItemsExtractor(groupTableData).extractItems();
+        List<Event> events = new EventsExtractor(groupTableData).extractEvents();
 
-        updateWeeksWithItems(reportItems);
+        updateWeeksWithItems(events);
 
         return groupWeeklyReports;
     }
@@ -35,22 +35,22 @@ public class WeeklyReportBuilder
         groupWeeklyReports.forEach(week -> week.getWhiteList().addAll(groupTableData.getWhiteList()));
     }
 
-    private List<GroupWeeklyReport> updateWeeksWithItems(List<ReportItem> reportItems)
+    private List<GroupWeeklyReport> updateWeeksWithItems(List<Event> events)
     {
         groupWeeklyReports.forEach(weeklyReport ->
         {
-            List<ReportItem> weeklyReportItems = filterWeeklyReportItems(reportItems, withinWeekBounds(weeklyReport));
-            weeklyReport.setReportItems(weeklyReportItems);
+            List<Event> weeklyEvents = filterWeeklyReportItems(events, withinWeekBounds(weeklyReport));
+            weeklyReport.setEvents(weeklyEvents);
         });
         return groupWeeklyReports;
     }
 
-    private List<ReportItem> filterWeeklyReportItems(List<ReportItem> reportItems, Predicate<ReportItem> filter)
+    private List<Event> filterWeeklyReportItems(List<Event> events, Predicate<Event> filter)
     {
-        return reportItems.stream().filter(filter).collect(Collectors.toList());
+        return events.stream().filter(filter).collect(Collectors.toList());
     }
 
-    private Predicate<ReportItem> withinWeekBounds(GroupWeeklyReport weeklyReport) {
+    private Predicate<Event> withinWeekBounds(GroupWeeklyReport weeklyReport) {
         return reportItem -> reportItem.isWithinWeekDateRange(weeklyReport);
     }
 }

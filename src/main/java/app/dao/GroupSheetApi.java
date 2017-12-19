@@ -74,13 +74,9 @@ public class GroupSheetApi
     private ReportRange updateReportRange(ReportRange reportRange) throws IOException
     {
         Pair<Integer, Integer> dataColorRows = getLastDataAndColorsRow(getRowsWithPeopleAndColors());
-
         int lastDataRow = dataColorRows.getKey();
-
         reportRange.getStart().setRow(group.getRowWithMonths());
-
         reportRange.getEnd().setRow(lastDataRow);
-
         return reportRange;
     }
 

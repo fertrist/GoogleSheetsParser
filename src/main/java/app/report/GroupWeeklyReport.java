@@ -1,6 +1,6 @@
 package app.report;
 
-import app.entities.Action;
+import app.entities.EventType;
 import app.entities.Category;
 import app.entities.Person;
 
@@ -20,7 +20,7 @@ public class GroupWeeklyReport {
     private DayOfWeek groupDay;
 
     private List<Person> whiteList = new ArrayList<>();
-    private List<ReportItem> reportItems = new ArrayList<>();
+    private List<Event> events = new ArrayList<>();
 
     public GroupWeeklyReport() {}
 
@@ -37,8 +37,8 @@ public class GroupWeeklyReport {
     }
 
     public List<Person> getPresent() {
-        return reportItems.stream().filter(i -> i.getAction() == Action.GROUP)
-                .map(ReportItem::getPerson).collect(Collectors.toList());
+        return events.stream().filter(i -> i.getEventType() == EventType.GROUP)
+                .map(Event::getPerson).collect(Collectors.toList());
     }
 
     public int getTotalCount() {
@@ -47,8 +47,8 @@ public class GroupWeeklyReport {
 
     public List<Person> getPresentByCategory(Category... categories)
     {
-        return reportItems.stream().filter(i -> i.getAction() == Action.GROUP && Arrays.asList(categories).contains(i.getPerson().getCategory()))
-                .map(ReportItem::getPerson).collect(Collectors.toList());
+        return events.stream().filter(i -> i.getEventType() == EventType.GROUP && Arrays.asList(categories).contains(i.getPerson().getCategory()))
+                .map(Event::getPerson).collect(Collectors.toList());
     }
 
     public List<Person> getWhiteAbsent()
@@ -60,12 +60,12 @@ public class GroupWeeklyReport {
 
     public int getMeetingNew()
     {
-        return getItemsByActionAndCategory(Action.MEETING, Category.NEW).size();
+        return getItemsByActionAndCategory(EventType.MEETING, Category.NEW).size();
     }
 
-    private List<ReportItem> getItemsByActionAndCategory(Action action, Category... categories)
+    private List<Event> getItemsByActionAndCategory(EventType eventType, Category... categories)
     {
-        return reportItems.stream().filter(i -> i.getAction() == action
+        return events.stream().filter(i -> i.getEventType() == eventType
                 && Arrays.asList(categories).contains(i.getPerson().getCategory())).collect(Collectors.toList());
     }
 
@@ -77,21 +77,21 @@ public class GroupWeeklyReport {
 
     public int getMeetingWhite()
     {
-        return getItemsByActionAndCategory(Action.MEETING, Category.WHITE, Category.TRIAL).size();
+        return getItemsByActionAndCategory(EventType.MEETING, Category.WHITE, Category.TRIAL).size();
     }
 
     public int getVisitNew()
     {
-      return getItemsByActionAndCategory(Action.VISIT, Category.NEW).size();
+      return getItemsByActionAndCategory(EventType.VISIT, Category.NEW).size();
     }
 
     public int getVisitWhite()
     {
-      return getItemsByActionAndCategory(Action.VISIT, Category.WHITE, Category.TRIAL).size();
+      return getItemsByActionAndCategory(EventType.VISIT, Category.WHITE, Category.TRIAL).size();
     }
 
     public int getCalls() {
-        return getItemsByActionAndCategory(Action.CALL, Category.NEW).size();
+        return getItemsByActionAndCategory(EventType.CALL, Category.NEW).size();
     }
 
     public LocalDate getStart() {
@@ -126,12 +126,12 @@ public class GroupWeeklyReport {
         this.groupComments = groupComments;
     }
 
-    public List<ReportItem> getReportItems() {
-        return reportItems;
+    public List<Event> getEvents() {
+        return events;
     }
 
-    public void setReportItems(List<ReportItem> reportItems)
+    public void setEvents(List<Event> events)
     {
-        this.reportItems.addAll(reportItems);
+        this.events.addAll(events);
     }
 }

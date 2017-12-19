@@ -3,7 +3,7 @@ package app.extract;
 import static app.extract.ReportUtil.isRowEmpty;
 import app.dao.GroupSheetApi;
 import app.data.ColorActionMapper;
-import app.entities.Action;
+import app.entities.EventType;
 import app.entities.CellWrapper;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.Color;
@@ -31,12 +31,12 @@ public class ColorExtractor
         int colorsRow = dataColorRows.getValue();
         int lastDataRow = dataColorRows.getKey();
 
-        Map<Action, Color> colors = parseColors(peopleAndColors, colorsRow - groupSheetApi.getGroup().getDataFirstRow());
+        Map<EventType, Color> colors = parseColors(peopleAndColors, colorsRow - groupSheetApi.getGroup().getDataFirstRow());
         return new ColorActionMapper(colors);
     }
 
-    private static Map<Action, Color> parseColors(List<RowData> rows, int colorsRow) {
-        Map<Action, Color> colors = new HashMap<>();
+    private static Map<EventType, Color> parseColors(List<RowData> rows, int colorsRow) {
+        Map<EventType, Color> colors = new HashMap<>();
         for (int j = colorsRow + 1; j < Math.min(colorsRow + DATA_OVERLAP, rows.size()); j++) {
             RowData r = rows.get(j);
 
@@ -53,7 +53,7 @@ public class ColorExtractor
             }
 
             Color backgroundColor = colorCell.getEffectiveFormat().getBackgroundColor();
-            Action mark = Action.getEnumFor(nameCell.getStringValue());
+            EventType mark = EventType.getEnumFor(nameCell.getStringValue());
             if (mark != null)
                 colors.putIfAbsent(mark, backgroundColor);
         }
