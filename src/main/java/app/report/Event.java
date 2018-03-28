@@ -53,7 +53,7 @@ public class Event {
                 '}';
     }
 
-    public boolean isWithinWeekDateRange(GroupWeeklyReport weeklyReport)
+    public boolean isWithinWeekDateRange(WeeklyReport weeklyReport)
     {
         LocalDate start = weeklyReport.getStart();
         LocalDate end = weeklyReport.getEnd();

@@ -1,13 +1,14 @@
 package app.generate;
 
 import static app.extract.ReportUtil.containsIgnoreCase;
+import app.dao.GroupSheetApi;
 import app.data.GroupTableData;
 import app.entities.Category;
 import app.entities.Group;
 import app.entities.Person;
 import app.extract.WeeklyReportBuilder;
-import app.report.GroupWeeklyReport;
 import app.report.Event;
+import app.report.WeeklyReport;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -17,29 +18,36 @@ import java.util.stream.Collectors;
 public class WeeklyReportGenerator
 {
     private GroupTableData groupTableData;
+    private GroupSheetApi groupSheetApi;
 
-    public WeeklyReportGenerator(GroupTableData groupTableData) {
-        this.groupTableData = groupTableData;
+    public WeeklyReportGenerator(GroupSheetApi groupSheetApi)
+    {
+        this.groupSheetApi = groupSheetApi;
     }
 
-    public List<GroupWeeklyReport> generateWeeklyReportsForReportStartEnd(LocalDate reportStart, LocalDate reportEnd) throws IOException
+    public List<WeeklyReport> generateWeeklyReportsForReportStartEnd(LocalDate reportStart, LocalDate reportEnd) throws IOException
     {
+        groupTableData = groupSheetApi.getGroupTableData();
+
         BlankWeeklyReportGenerator blankWeeklyReportGenerator = new BlankWeeklyReportGenerator(groupTableData);
 
-        List<GroupWeeklyReport> groupWeeklyReports = blankWeeklyReportGenerator.getWeeksBetweenStartEnd(reportStart, reportEnd);
+        List<WeeklyReport> weeklyReports = blankWeeklyReportGenerator.getWeeksBetweenStartEnd(reportStart, reportEnd);
 
-        WeeklyReportBuilder weeklyReportBuilder = new WeeklyReportBuilder(groupTableData, groupWeeklyReports);
-        groupWeeklyReports = weeklyReportBuilder.fillWeeksWithItems();
+        WeeklyReportBuilder weeklyReportBuilder = new WeeklyReportBuilder(groupTableData, weeklyReports);
+        weeklyReports = weeklyReportBuilder.fillWeeksWithItems();
 
-        GroupWeeklyReport lastGroupWeeklyReport = getLastWeeklyReport(groupWeeklyReports);
-        adjustAddedRemovedPeople(lastGroupWeeklyReport);
+        WeeklyReport lastWeeklyReport = getLastWeeklyReport(weeklyReports);
+        adjustAddedRemovedPeople(lastWeeklyReport);
 
-        return groupWeeklyReports;
+        return weeklyReports;
     }
 
-    private void adjustAddedRemovedPeople(GroupWeeklyReport lastGroupWeeklyReport) {
-        groupTableData.getPeople().forEach(person -> adjustPersonInWhiteList(person, lastGroupWeeklyReport.getWhiteList()));
-        lastGroupWeeklyReport.getEvents().forEach(this::adjustReportItem);
+    private void adjustAddedRemovedPeople(WeeklyReport lastWeeklyReport) {
+        groupTableData.getPeople()
+                .forEach(person -> adjustPersonInWhiteList(person, lastWeeklyReport.getWhiteList()));
+
+        lastWeeklyReport.getEvents()
+                .forEach(this::adjustReportItem);
     }
 
     private void adjustReportItem(Event event)
@@ -89,8 +97,8 @@ public class WeeklyReportGenerator
 
     }
 
-    private GroupWeeklyReport getLastWeeklyReport(List<GroupWeeklyReport> groupWeeklyReports)
+    private WeeklyReport getLastWeeklyReport(List<WeeklyReport> weeklyReports)
     {
-        return groupWeeklyReports.get(groupWeeklyReports.size() - 1);
+        return weeklyReports.get(weeklyReports.size() - 1);
     }
 }

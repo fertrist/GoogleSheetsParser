@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class GroupWeeklyReport {
+public class WeeklyReport {
 
     private LocalDate start;
     private LocalDate end;
@@ -22,7 +22,7 @@ public class GroupWeeklyReport {
     private List<Person> whiteList = new ArrayList<>();
     private List<Event> events = new ArrayList<>();
 
-    public GroupWeeklyReport() {}
+    public WeeklyReport() {}
 
     public DayOfWeek getGroupDay() {
         return groupDay;

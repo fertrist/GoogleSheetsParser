@@ -9,7 +9,7 @@ import app.entities.CellWrapper;
 import app.entities.ColorWrapper;
 import app.entities.GroupMeetingNotes;
 import app.extract.ReportUtil;
-import app.report.GroupWeeklyReport;
+import app.report.WeeklyReport;
 import com.google.api.services.sheets.v4.model.CellData;
 import com.google.api.services.sheets.v4.model.RowData;
 
@@ -28,9 +28,9 @@ public class BlankWeeklyReportGenerator
         this.groupTableData = groupTableData;
     }
 
-    public List<GroupWeeklyReport> getWeeksBetweenStartEnd(LocalDate start, LocalDate end)
+    public List<WeeklyReport> getWeeksBetweenStartEnd(LocalDate start, LocalDate end)
     {
-        List<GroupWeeklyReport> blankWeeklyReports = getBlankWeeksBetweenStartEndDates(start, end);
+        List<WeeklyReport> blankWeeklyReports = getBlankWeeksBetweenStartEndDates(start, end);
 
         blankWeeklyReports.forEach(weeklyReport ->
         {
@@ -126,18 +126,18 @@ public class BlankWeeklyReportGenerator
         return new ColorWrapper(colorActionMapper.getColorForAction(GROUP));
     }
 
-    private List<GroupWeeklyReport> getBlankWeeksBetweenStartEndDates(LocalDate start, LocalDate end)
+    private List<WeeklyReport> getBlankWeeksBetweenStartEndDates(LocalDate start, LocalDate end)
     {
-        List<GroupWeeklyReport> groupWeeklyReports = new ArrayList<>();
+        List<WeeklyReport> weeklyReports = new ArrayList<>();
 
         for (LocalDate tmp = start; tmp.isBefore(end) || tmp.isEqual(end); tmp = tmp.plusWeeks(1))
         {
-            GroupWeeklyReport groupWeeklyReport = new GroupWeeklyReport();
-            groupWeeklyReport.setStart(tmp);
-            groupWeeklyReport.setEnd(tmp.plusDays(6));
-            groupWeeklyReports.add(groupWeeklyReport);
-            groupWeeklyReport.setGroupDay(groupTableData.getGroup().getGroupDay());
+            WeeklyReport weeklyReport = new WeeklyReport();
+            weeklyReport.setStart(tmp);
+            weeklyReport.setEnd(tmp.plusDays(6));
+            weeklyReports.add(weeklyReport);
+            weeklyReport.setGroupDay(groupTableData.getGroup().getGroupDay());
         }
-        return groupWeeklyReports;
+        return weeklyReports;
     }
 }

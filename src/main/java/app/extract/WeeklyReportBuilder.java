@@ -2,7 +2,7 @@ package app.extract;
 
 import app.data.GroupTableData;
 import app.report.Event;
-import app.report.GroupWeeklyReport;
+import app.report.WeeklyReport;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -11,15 +11,15 @@ import java.util.stream.Collectors;
 public class WeeklyReportBuilder
 {
     private GroupTableData groupTableData;
-    private List<GroupWeeklyReport> groupWeeklyReports;
+    private List<WeeklyReport> weeklyReports;
 
-    public WeeklyReportBuilder(GroupTableData groupTableData, List<GroupWeeklyReport> groupWeeklyReports)
+    public WeeklyReportBuilder(GroupTableData groupTableData, List<WeeklyReport> weeklyReports)
     {
         this.groupTableData = groupTableData;
-        this.groupWeeklyReports = groupWeeklyReports;
+        this.weeklyReports = weeklyReports;
     }
 
-    public List<GroupWeeklyReport> fillWeeksWithItems()
+    public List<WeeklyReport> fillWeeksWithItems()
     {
         updateWeeksWithWhiteList();
 
@@ -27,22 +27,22 @@ public class WeeklyReportBuilder
 
         updateWeeksWithItems(events);
 
-        return groupWeeklyReports;
+        return weeklyReports;
     }
 
     private void updateWeeksWithWhiteList()
     {
-        groupWeeklyReports.forEach(week -> week.getWhiteList().addAll(groupTableData.getWhiteList()));
+        weeklyReports.forEach(week -> week.getWhiteList().addAll(groupTableData.getWhiteList()));
     }
 
-    private List<GroupWeeklyReport> updateWeeksWithItems(List<Event> events)
+    private List<WeeklyReport> updateWeeksWithItems(List<Event> events)
     {
-        groupWeeklyReports.forEach(weeklyReport ->
+        weeklyReports.forEach(weeklyReport ->
         {
             List<Event> weeklyEvents = filterWeeklyReportItems(events, withinWeekBounds(weeklyReport));
             weeklyReport.setEvents(weeklyEvents);
         });
-        return groupWeeklyReports;
+        return weeklyReports;
     }
 
     private List<Event> filterWeeklyReportItems(List<Event> events, Predicate<Event> filter)
@@ -50,7 +50,7 @@ public class WeeklyReportBuilder
         return events.stream().filter(filter).collect(Collectors.toList());
     }
 
-    private Predicate<Event> withinWeekBounds(GroupWeeklyReport weeklyReport) {
+    private Predicate<Event> withinWeekBounds(WeeklyReport weeklyReport) {
         return reportItem -> reportItem.isWithinWeekDateRange(weeklyReport);
     }
 }

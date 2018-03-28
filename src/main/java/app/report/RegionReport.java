@@ -27,8 +27,8 @@ public class RegionReport {
         List<String> list = new ArrayList<>();
         for (GroupReport groupReport : groupReports) {
             Set<String> innerSet = new HashSet<>();
-            for (GroupWeeklyReport groupWeeklyReport : groupReport.getGroupWeeklyReports()) {
-                innerSet.addAll(groupWeeklyReport.getPresentByCategory(Category.NEW).stream().map(Person::getName).collect(Collectors.toSet()));
+            for (WeeklyReport weeklyReport : groupReport.getWeeklyReports()) {
+                innerSet.addAll(weeklyReport.getPresentByCategory(Category.NEW).stream().map(Person::getName).collect(Collectors.toSet()));
             }
             list.addAll(innerSet);
         }
@@ -38,7 +38,7 @@ public class RegionReport {
     public int getTotalWhiteCount() {
         int whiteCount = 0;
         for (GroupReport groupReport : groupReports) {
-            whiteCount += groupReport.getGroupWeeklyReports().get(groupReport.getGroupWeeklyReports().size()-1).getWhiteList().size();
+            whiteCount += groupReport.getWeeklyReports().get(groupReport.getWeeklyReports().size()-1).getWhiteList().size();
         }
         return whiteCount;
     }

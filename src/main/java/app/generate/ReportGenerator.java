@@ -30,24 +30,22 @@ public class ReportGenerator {
 
     private RegionReport collectRegionReport(String regionOrdinalNumber)
     {
-        RegionReport regionReport = createBlankRegion(regionOrdinalNumber);
+        RegionReport regionReport = createBlankRegionAndLogMessage(regionOrdinalNumber);
 
-        System.out.println("Processing " + regionReport.getLeader() + "'s regionReport.");
-
-        List<GroupReport> groupReports = getGroupOrdinalsStream(regionOrdinalNumber)
+        List<GroupReport> groupReports = getGroupStream(regionOrdinalNumber)
                 .map(Configuration::buildGroup)
                 .map(GroupReportGenerator::new)
                 .map(GroupReportGenerator::generateGroupReport)
                 .collect(Collectors.toList());
 
         regionReport.setGroupReports(groupReports);
-
         return regionReport;
     }
 
-    private RegionReport createBlankRegion(String regionOrdinalNumber)
+    private RegionReport createBlankRegionAndLogMessage(String regionOrdinalNumber)
     {
         String regionLeader = getRegionalLeader(regionOrdinalNumber);
+        System.out.println("Processing " + regionLeader + "'s regionReport.");
         return new RegionReport(regionLeader);
     }
 
@@ -56,7 +54,7 @@ public class ReportGenerator {
         return getRegionProperty(LEADER, regionOrdinalNumber);
     }
 
-    private Stream<Integer> getGroupOrdinalsStream(String regionOrdinalNumber)
+    private Stream<Integer> getGroupStream(String regionOrdinalNumber)
     {
         String [] groupNumbers = getRegionProperty(GROUPS, regionOrdinalNumber).split(",");
         return Arrays.stream(groupNumbers).map(Integer::valueOf);

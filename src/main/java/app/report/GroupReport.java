@@ -8,9 +8,11 @@ public class GroupReport {
 
     private Group group;
 
-    private List<GroupWeeklyReport> groupWeeklyReports;
+    private List<WeeklyReport> weeklyReports;
 
-    public GroupReport(Group group) {
+    public GroupReport(Group group)
+    {
+        System.out.println("Processing " + group.getLeaderName() + "'s group.");
         this.group = group;
     }
 
@@ -22,11 +24,11 @@ public class GroupReport {
         this.group = group;
     }
 
-    public List<GroupWeeklyReport> getGroupWeeklyReports() {
-        return groupWeeklyReports;
+    public List<WeeklyReport> getWeeklyReports() {
+        return weeklyReports;
     }
 
-    public void setGroupWeeklyReports(List<GroupWeeklyReport> groupWeeklyReports) {
-        this.groupWeeklyReports = groupWeeklyReports;
+    public void setWeeklyReports(List<WeeklyReport> weeklyReports) {
+        this.weeklyReports = weeklyReports;
     }
 }

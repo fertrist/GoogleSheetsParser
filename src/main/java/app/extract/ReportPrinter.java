@@ -18,7 +18,7 @@ import app.conf.Configuration;
 import app.entities.*;
 import app.entities.Category;
 import app.report.GroupReport;
-import app.report.GroupWeeklyReport;
+import app.report.WeeklyReport;
 import app.report.RegionReport;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
@@ -178,9 +178,9 @@ public class ReportPrinter
         service.spreadsheets().batchUpdate(getReportSpreadSheetId(), body).execute();
 
         for (GroupReport groupReport : regionReport.getGroupReports()) {
-            List<GroupWeeklyReport> groupGroupWeeklyReports = groupReport.getGroupWeeklyReports();
-            printWeeks(service, groupReport.getGroup(), groupGroupWeeklyReports, rowPointer.getValue());
-            rowPointer.setValue(rowPointer.getValue() + groupGroupWeeklyReports.size() + 1);
+            List<WeeklyReport> groupWeeklyReports = groupReport.getWeeklyReports();
+            printWeeks(service, groupReport.getGroup(), groupWeeklyReports, rowPointer.getValue());
+            rowPointer.setValue(rowPointer.getValue() + groupWeeklyReports.size() + 1);
         }
     }
 
@@ -218,14 +218,14 @@ public class ReportPrinter
         return headerRow;
     }
 
-    public static void prettyPrintWeeks(List<GroupWeeklyReport> groupWeeklyReports) {
+    public static void prettyPrintWeeks(List<WeeklyReport> weeklyReports) {
         String format = "%10s | %10s | %10s | %10s | %10s | %10s | %15s | %15s | %15s | %15s | %10s %n";
         System.out.printf(format, "Неделя", "По списку", "Было всего", "Cписочных", "Гости", "Новые люди",
                 "Посещ.списки", "Встр. списки", "Посещ.новые", "Встр. новые", "Звонки");
-        for (GroupWeeklyReport groupWeeklyReport : groupWeeklyReports) {
-            System.out.printf(format, groupWeeklyReport.getStart(), groupWeeklyReport.getWhiteList().size(), groupWeeklyReport.getPresent().size(), groupWeeklyReport.getPresentByCategory(Category.WHITE).size(),
-                    groupWeeklyReport.getPresentByCategory(Category.GUEST).size(), groupWeeklyReport.getPresentByCategory(Category.NEW).size(), groupWeeklyReport.getVisitWhite(),
-                    groupWeeklyReport.getMeetingWhite(), groupWeeklyReport.getVisitNew(), groupWeeklyReport.getMeetingNew(), groupWeeklyReport.getCalls());
+        for (WeeklyReport weeklyReport : weeklyReports) {
+            System.out.printf(format, weeklyReport.getStart(), weeklyReport.getWhiteList().size(), weeklyReport.getPresent().size(), weeklyReport.getPresentByCategory(Category.WHITE).size(),
+                    weeklyReport.getPresentByCategory(Category.GUEST).size(), weeklyReport.getPresentByCategory(Category.NEW).size(), weeklyReport.getVisitWhite(),
+                    weeklyReport.getMeetingWhite(), weeklyReport.getVisitNew(), weeklyReport.getMeetingNew(), weeklyReport.getCalls());
         }
     }
 
@@ -264,17 +264,17 @@ public class ReportPrinter
     }
 
     /**
-     * @param groupWeeklyReport groupWeeklyReport to report
+     * @param weeklyReport groupWeeklyReport to report
      * @param newPeople set of new people of current region (to collect summary)
      */
-    public static RowData getWeekRow(GroupWeeklyReport groupWeeklyReport, Group group, Set<String> newPeople, boolean lastWeek) {
+    public static RowData getWeekRow(WeeklyReport weeklyReport, Group group, Set<String> newPeople, boolean lastWeek) {
         RowData rowData = new RowData();
 
         CellData leader = getCellWithValue(group.getLeaderName());
-        CellData weekName = getCellWithValue(ReportUtil.getDayMonth(groupWeeklyReport.getStart())
-                + " - " + ReportUtil.getDayMonth(groupWeeklyReport.getEnd()));
-        CellData presentTotal = getCellWithValue(groupWeeklyReport.getTotalCount());
-        CellData listWhite = getCellWithValue(groupWeeklyReport.getWhiteList().size());
+        CellData weekName = getCellWithValue(ReportUtil.getDayMonth(weeklyReport.getStart())
+                + " - " + ReportUtil.getDayMonth(weeklyReport.getEnd()));
+        CellData presentTotal = getCellWithValue(weeklyReport.getTotalCount());
+        CellData listWhite = getCellWithValue(weeklyReport.getWhiteList().size());
         if (lastWeek) {
             String note = "";
             for (String name : group.getAddedPeople()) {
@@ -285,28 +285,28 @@ public class ReportPrinter
             }
             listWhite.setNote(note);
         }
-        CellData presentWhite = getCell(groupWeeklyReport.getPresentByCategory(Category.WHITE).size(), listToNote(groupWeeklyReport.getWhiteAbsent()));
-        List<Person> guests = groupWeeklyReport.getPresentByCategory(Category.GUEST, Category.TRIAL);
+        CellData presentWhite = getCell(weeklyReport.getPresentByCategory(Category.WHITE).size(), listToNote(weeklyReport.getWhiteAbsent()));
+        List<Person> guests = weeklyReport.getPresentByCategory(Category.GUEST, Category.TRIAL);
         CellData presentGuests = getCell(guests.size(), listToNote(guests));
-        List<Person> newGuys = groupWeeklyReport.getPresentByCategory(Category.NEW);
+        List<Person> newGuys = weeklyReport.getPresentByCategory(Category.NEW);
         CellData presentNew = getCell(newGuys.size(), listToNote(newGuys));
         newPeople.addAll(newGuys.stream().map(Person::getName).collect(Collectors.toSet()));
         CellData groupRate = getCellWithValue(
-                groupWeeklyReport.getPercents() != null ? groupWeeklyReport.getPercents() : "-");
-        groupRate.setNote(groupWeeklyReport.getGroupComments());
-        CellData visitsWhite = getCellWithValue(groupWeeklyReport.getVisitWhite());
-        CellData meetingsWhite = getCellWithValue(groupWeeklyReport.getMeetingWhite());
-        CellData visitsNew = getCellWithValue(groupWeeklyReport.getVisitNew());
-        CellData meetingsNew = getCellWithValue(groupWeeklyReport.getMeetingNew());
-        CellData callsNew = getCellWithValue(groupWeeklyReport.getCalls());
+                weeklyReport.getPercents() != null ? weeklyReport.getPercents() : "-");
+        groupRate.setNote(weeklyReport.getGroupComments());
+        CellData visitsWhite = getCellWithValue(weeklyReport.getVisitWhite());
+        CellData meetingsWhite = getCellWithValue(weeklyReport.getMeetingWhite());
+        CellData visitsNew = getCellWithValue(weeklyReport.getVisitNew());
+        CellData meetingsNew = getCellWithValue(weeklyReport.getMeetingNew());
+        CellData callsNew = getCellWithValue(weeklyReport.getCalls());
 
         rowData.setValues(Arrays.asList(leader, weekName, listWhite, presentTotal, presentWhite, presentGuests,
                 presentNew, groupRate, visitsWhite, meetingsWhite, visitsNew, meetingsNew, callsNew));
         return rowData;
     }
 
-    public static void printWeeks(Sheets service, Group group, List<GroupWeeklyReport> groupWeeklyReports, int row) throws IOException {
-        prettyPrintWeeks(groupWeeklyReports);
+    public static void printWeeks(Sheets service, Group group, List<WeeklyReport> weeklyReports, int row) throws IOException {
+        prettyPrintWeeks(weeklyReports);
 
         List<Request> requests = new ArrayList<>();
 
@@ -324,12 +324,12 @@ public class ReportPrinter
 
         // set each row
         Set<String> uniqueNewPeople = new HashSet<>();
-        for (int i = 0; i <= groupWeeklyReports.size() - 2; i++) {
-            allRows.add(getWeekRow(groupWeeklyReports.get(i), group, uniqueNewPeople, false));
+        for (int i = 0; i <= weeklyReports.size() - 2; i++) {
+            allRows.add(getWeekRow(weeklyReports.get(i), group, uniqueNewPeople, false));
         }
-        allRows.add(getWeekRow(groupWeeklyReports.get(groupWeeklyReports.size() - 1), group, uniqueNewPeople, true));
+        allRows.add(getWeekRow(weeklyReports.get(weeklyReports.size() - 1), group, uniqueNewPeople, true));
 
-        int lastWhiteCount = groupWeeklyReports.get(groupWeeklyReports.size() - 1).getWhiteList().size();
+        int lastWhiteCount = weeklyReports.get(weeklyReports.size() - 1).getWhiteList().size();
 
         //add footer
         allRows.add(getWeekFooterRow(lastWhiteCount, uniqueNewPeople));

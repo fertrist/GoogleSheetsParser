@@ -1,5 +1,6 @@
 package app.conf;
 
+import static app.extract.ReportUtil.isEmpty;
 import app.entities.Group;
 
 import java.io.FileInputStream;
@@ -12,8 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-
-import static app.extract.ReportUtil.isEmpty;
 
 public class Configuration {
 
@@ -118,7 +117,9 @@ public class Configuration {
         return translation;
     }
 
-    public static Group buildGroup(int groupNo) {
+    public static Group buildGroup(int groupNo)
+    {
+        // TODO create builder
         String spreadsheetId = getSpreadsheetId(getGroupProperty(SPREADSHEET_URL, groupNo));
         String leaderName = getGroupProperty(LEADER, groupNo);
         String groupDay = getGroupProperty(GROUP_DAY, groupNo);
