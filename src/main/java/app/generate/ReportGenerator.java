@@ -5,6 +5,7 @@ import static app.conf.Configuration.LEADER;
 import static app.conf.Configuration.REGIONS;
 import static app.conf.Configuration.getProperty;
 import static app.conf.Configuration.getRegionProperty;
+import app.conf.GroupBuilder;
 import app.report.GroupReport;
 import app.report.RegionReport;
 import app.conf.Configuration;
@@ -33,7 +34,8 @@ public class ReportGenerator {
         RegionReport regionReport = createBlankRegionAndLogMessage(regionOrdinalNumber);
 
         List<GroupReport> groupReports = getGroupStream(regionOrdinalNumber)
-                .map(Configuration::buildGroup)
+                .map(groupNumber -> new GroupBuilder(Configuration.getProperties(), groupNumber))
+                .map(GroupBuilder::buildGroup)
                 .map(GroupReportGenerator::new)
                 .map(GroupReportGenerator::generateGroupReport)
                 .collect(Collectors.toList());

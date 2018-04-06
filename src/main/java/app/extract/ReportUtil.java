@@ -195,10 +195,6 @@ public class ReportUtil {
         return false;
     }
 
-    public static boolean isEmpty(String s) {
-        return s == null || s.length() == 0 || s.trim().length() == 0;
-    }
-
     public static String getDayMonth(LocalDate localDate) {
         return String.format("%02d.%02d", localDate.getDayOfMonth(), localDate.getMonthValue());
     }

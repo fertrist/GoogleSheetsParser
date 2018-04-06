@@ -27,14 +27,14 @@ public class WeeklyReportGenerator
 
     public List<WeeklyReport> generateWeeklyReportsForReportStartEnd(LocalDate reportStart, LocalDate reportEnd) throws IOException
     {
-        groupTableData = groupSheetApi.getGroupTableData();
+        this.groupTableData = groupSheetApi.getGroupTableData();
 
         BlankWeeklyReportGenerator blankWeeklyReportGenerator = new BlankWeeklyReportGenerator(groupTableData);
 
         List<WeeklyReport> weeklyReports = blankWeeklyReportGenerator.getWeeksBetweenStartEnd(reportStart, reportEnd);
 
-        WeeklyReportBuilder weeklyReportBuilder = new WeeklyReportBuilder(groupTableData, weeklyReports);
-        weeklyReports = weeklyReportBuilder.fillWeeksWithItems();
+        WeeklyReportBuilder weeklyReportBuilder = new WeeklyReportBuilder(groupTableData);
+        weeklyReportBuilder.fillWeeksWithItems(weeklyReports);
 
         WeeklyReport lastWeeklyReport = getLastWeeklyReport(weeklyReports);
         adjustAddedRemovedPeople(lastWeeklyReport);

@@ -40,14 +40,14 @@ public class PeopleExtractor
 
             RowData r = peopleData.get(i);
 
-            if (isRowEmpty(r)) continue;
-            if (r.getValues().size() < 2) continue; // should be at least 2 columns
+            if (isRowEmpty(r) || (r.getValues().size() < 2)) continue; // potential hidden bug avoided, should be at least 2 columns
 
             CellWrapper cellWrapper = new CellWrapper(r.getValues().get(1)); // 2nd column is column with people names
 
-            if (cellWrapper.isColorsTitle()) return people;
+            if (cellWrapper.isColorsTitle()) return people; // if we reached the colors title search can be aborted
 
-            if (!cellWrapper.isUnderline() && !cellWrapper.isCellEmpty()) {
+            if (!cellWrapper.isUnderline() && !cellWrapper.isCellEmpty()) // indicator of a some custom title or just an empty cell
+            {
                 PersonCategoryFinder categoryFinder = new PersonCategoryFinder(groupSheetApi.getGroup());
 
                 Category category = categoryFinder.defineCategory(cellWrapper);

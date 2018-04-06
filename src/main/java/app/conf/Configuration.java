@@ -1,17 +1,12 @@
 package app.conf;
 
-import static app.extract.ReportUtil.isEmpty;
-import app.entities.Group;
+import static java.lang.String.format;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 public class Configuration {
@@ -23,26 +18,10 @@ public class Configuration {
     public static final String REPORT_TITLE = "report.title";
     public static final String PREVIOUS_WHITE_COUNT = "previous.white.count";
     public static final String PREVIOUS_NEW_COUNT = "previous.new.count";
-
-    public static final String DEFAULT_ROW_WITH_MONTHS = "default.row.with.months";
-    public static final String DEFAULT_GROUP_DAY = "default.group.day";
-    public static final String DEFAULT_PEOPLE_COLUMN = "default.people.column";
-
-    public static final String SPREADSHEET_URL = "spreadsheet.url";
     public static final String LEADER = "leader.name";
-    public static final String ROW_WITH_MONTHS = "row.with.months";
-    public static final String GROUP_DAY = "group.day";
-    public static final String DATA_FIRST_ROW = "data.first.row";
-    public static final String PEOPLE_COLUMN = "people.column";
-    public static final String ADDED_PEOPLE = "added.people";
-    public static final String HAS_STAGES = "has.stages";
-    public static final String REMOVED_PEOPLE = "removed.people";
     public static final String GROUPS = "groups";
-
     private static final String REGION_PREFIX = "region%s.";
-    private static final String GROUP_PREFIX = "group%d.";
     private static final String CONFIGURATION_FILE = "CONFIGURATION_FILE";
-
     private static String reportSpreadSheetId;
     private static int reportStartDay;
     private static String reportStartMonth;
@@ -117,66 +96,13 @@ public class Configuration {
         return translation;
     }
 
-    public static Group buildGroup(int groupNo)
+    public static Properties getProperties()
     {
-        // TODO create builder
-        String spreadsheetId = getSpreadsheetId(getGroupProperty(SPREADSHEET_URL, groupNo));
-        String leaderName = getGroupProperty(LEADER, groupNo);
-        String groupDay = getGroupProperty(GROUP_DAY, groupNo);
-        groupDay = groupDay == null ? getProperty(DEFAULT_GROUP_DAY) : groupDay;
-        DayOfWeek groupWeekDay = getDayOfWeek(Integer.valueOf(groupDay.trim()));
-
-        String rowWithMonthsStr = getGroupProperty(ROW_WITH_MONTHS, groupNo);
-        rowWithMonthsStr = rowWithMonthsStr == null ? getProperty(DEFAULT_ROW_WITH_MONTHS) : rowWithMonthsStr;
-
-        int rowWithMonths = Integer.valueOf(rowWithMonthsStr);
-
-        boolean hasStages = Boolean.valueOf(getGroupProperty(HAS_STAGES, groupNo));
-
-        int stagesOffset = hasStages ? 1 : 0;
-
-        int rowWithDays = rowWithMonths + stagesOffset + 1;
-
-        int rowWithDates = rowWithDays + 1;
-
-        String dataFirstRowStr = getGroupProperty(DATA_FIRST_ROW, groupNo);
-        int dataFirstRow = dataFirstRowStr != null ? Integer.valueOf(dataFirstRowStr) : rowWithDates + 1;
-
-        String peopleColumn = getGroupProperty(PEOPLE_COLUMN, groupNo);
-        peopleColumn = peopleColumn == null ? getProperty(DEFAULT_PEOPLE_COLUMN) : peopleColumn;
-
-        String addedPeopleStr = getGroupProperty(ADDED_PEOPLE, groupNo);
-
-        String removedPeopleStr = getGroupProperty(REMOVED_PEOPLE, groupNo);
-
-        List<String> addedPeople = isEmpty(addedPeopleStr) ? new ArrayList<>()
-                : Arrays.asList(addedPeopleStr.split(","));
-        List<String> removedPeople = isEmpty(removedPeopleStr) ? new ArrayList<>()
-                : Arrays.asList(removedPeopleStr.split(","));
-
-        return Group.builder().groupNumber(groupNo).spreadSheetId(spreadsheetId)
-                .leaderName(leaderName)
-                .groupDay(groupWeekDay)
-                .monthsRow(rowWithMonths)
-                .rowWithDates(rowWithDates)
-                .rowWithDays(rowWithDays)
-                .peopleColumn(peopleColumn)
-                .dataStartRow(dataFirstRow)
-                .addedPeople(addedPeople)
-                .removedPeople(removedPeople)
-                .build();
-    }
-
-    public static DayOfWeek getDayOfWeek(int d) {
-        return DayOfWeek.values()[d-1];
-    }
-
-    public static String getGroupProperty(String property, int groupNo) {
-        return properties.getProperty(String.format(GROUP_PREFIX, groupNo) + property);
+        return properties;
     }
 
     public static String getRegionProperty(String property, String regionNo) {
-        return properties.getProperty(String.format(REGION_PREFIX, regionNo) + property);
+        return properties.getProperty(format(REGION_PREFIX, regionNo) + property);
     }
 
     public static String getProperty(String property) {

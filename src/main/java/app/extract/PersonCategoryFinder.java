@@ -1,10 +1,10 @@
 package app.extract;
 
-import static app.extract.ReportUtil.containsIgnoreCase;
 import app.entities.Category;
 import app.entities.CellWrapper;
 import app.entities.ColorWrapper;
 import app.entities.Group;
+import org.apache.commons.lang3.StringUtils;
 
 public class PersonCategoryFinder
 {
@@ -15,29 +15,55 @@ public class PersonCategoryFinder
     }
 
     public Category defineCategory(CellWrapper cellWrapper) {
-        String name = cellWrapper.getStringValue();
+        String personName = cellWrapper.getStringValue().trim();
         ColorWrapper colorWrapper = cellWrapper.getBgColor();
 
-        // handle added/removed people (they first are considered as if they weren't added/removed)
-        boolean isAdded = containsIgnoreCase(group.getAddedPeople(), name);
-        boolean isRemoved = containsIgnoreCase(group.getRemovedPeople(), name);
-        boolean onTrial = name.toLowerCase().contains("(и.с") || name.toLowerCase().contains("(исп.срок)")
-                || name.toLowerCase().contains("(исп");
+        boolean isOnTrial = isOnTrial(personName);
+        if (hasBeenJustRemoved(personName) // means it was not removed on first n weeks
+                || (colorWrapper.isWhite() && !isOnTrial && !hasBeenJustAdded(personName)))
+        {
+            return Category.WHITE;
+        }
+        return defineNotWhiteCategory(colorWrapper.isGrey(), isOnTrial);
+    }
 
-        Category category;
-        if ((colorWrapper.isWhite() && !isAdded && !onTrial) || isRemoved) {
-            category = Category.WHITE;
-        }
-        else if (colorWrapper.isGrey() && !onTrial) {
-            category = Category.GUEST;
-        }
-        else if (colorWrapper.isGrey()) {
-            category = Category.TRIAL;
-        }
-        else {
-            category = Category.NEW;
-        }
+    private boolean isOnTrial(String personName)
+    {
+        String lowerCase = personName.toLowerCase();
+        return lowerCase.contains("(и.с") || lowerCase.contains("(исп")
+                || lowerCase.contains("(ис") || lowerCase.contains("срок)")
+                || lowerCase.contains("(випр") || lowerCase.contains("терм");
+    }
 
-        return category;
+    private boolean hasBeenJustRemoved(String personName)
+    {
+        return group.getRemovedPeople().stream()
+                .filter(value -> StringUtils.equalsIgnoreCase(value, personName))
+                .findFirst().isPresent();
+    }
+
+    private boolean hasBeenJustAdded(String personName)
+    {
+        return group.getAddedPeople().stream()
+                .filter(value -> StringUtils.equalsIgnoreCase(value, personName))
+                .findFirst().isPresent();
+    }
+
+    private Category defineNotWhiteCategory(boolean isGreyBackGround, boolean onTrial)
+    {
+        Category notWhileCategory;
+        if (onTrial)
+        {
+            notWhileCategory = Category.TRIAL;
+        }
+        else if (isGreyBackGround)
+        {
+            notWhileCategory = Category.GUEST;
+        }
+        else
+        {
+            notWhileCategory = Category.NEW;
+        }
+        return notWhileCategory;
     }
 }

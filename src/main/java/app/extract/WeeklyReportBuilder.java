@@ -11,31 +11,27 @@ import java.util.stream.Collectors;
 public class WeeklyReportBuilder
 {
     private GroupTableData groupTableData;
-    private List<WeeklyReport> weeklyReports;
 
-    public WeeklyReportBuilder(GroupTableData groupTableData, List<WeeklyReport> weeklyReports)
+    public WeeklyReportBuilder(GroupTableData groupTableData)
     {
         this.groupTableData = groupTableData;
-        this.weeklyReports = weeklyReports;
     }
 
-    public List<WeeklyReport> fillWeeksWithItems()
+    public void fillWeeksWithItems(List<WeeklyReport> weeklyReports)
     {
-        updateWeeksWithWhiteList();
+        updateWeeksWithWhiteList(weeklyReports);
 
         List<Event> events = new EventsExtractor(groupTableData).extractEvents();
 
-        updateWeeksWithItems(events);
-
-        return weeklyReports;
+        updateWeeksWithItems(weeklyReports, events);
     }
 
-    private void updateWeeksWithWhiteList()
+    private void updateWeeksWithWhiteList(List<WeeklyReport> weeklyReports)
     {
         weeklyReports.forEach(week -> week.getWhiteList().addAll(groupTableData.getWhiteList()));
     }
 
-    private List<WeeklyReport> updateWeeksWithItems(List<Event> events)
+    private List<WeeklyReport> updateWeeksWithItems(List<WeeklyReport> weeklyReports, List<Event> events)
     {
         weeklyReports.forEach(weeklyReport ->
         {
