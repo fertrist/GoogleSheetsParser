@@ -48,9 +48,9 @@ public class PeopleExtractor
 
             if (!cellWrapper.isUnderline() && !cellWrapper.isCellEmpty()) // indicator of a some custom title or just an empty cell
             {
-                PersonCategoryFinder categoryFinder = new PersonCategoryFinder(groupSheetApi.getGroup());
+                PersonCategoryFinder categoryFinder = new PersonCategoryFinder(groupSheetApi.getGroup(), cellWrapper);
 
-                Category category = categoryFinder.defineCategory(cellWrapper);
+                Category category = categoryFinder.defineCategory();
 
                 people.add(new Person(category, cellWrapper.getStringValue(), offset + i));
             }
@@ -58,8 +58,4 @@ public class PeopleExtractor
 
         return people;
     }
-
-
-
-
 }

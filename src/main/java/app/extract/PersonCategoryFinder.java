@@ -9,25 +9,31 @@ import org.apache.commons.lang3.StringUtils;
 public class PersonCategoryFinder
 {
     private Group group;
+    private String personName;
+    private ColorWrapper background;
 
-    public PersonCategoryFinder(Group group) {
+    public PersonCategoryFinder(Group group, CellWrapper cellWrapper) {
         this.group = group;
+        this.personName = cellWrapper.getStringValue().trim();
+        this.background = cellWrapper.getBgColor();
     }
 
-    public Category defineCategory(CellWrapper cellWrapper) {
-        String personName = cellWrapper.getStringValue().trim();
-        ColorWrapper colorWrapper = cellWrapper.getBgColor();
-
-        boolean isOnTrial = isOnTrial(personName);
-        if (hasBeenJustRemoved(personName) // means it was not removed on first n weeks
-                || (colorWrapper.isWhite() && !isOnTrial && !hasBeenJustAdded(personName)))
+    public Category defineCategory() {
+        if (canBeSetToWhiteCategory())
         {
             return Category.WHITE;
         }
-        return defineNotWhiteCategory(colorWrapper.isGrey(), isOnTrial);
+        return defineNotWhiteCategory();
     }
 
-    private boolean isOnTrial(String personName)
+    private boolean canBeSetToWhiteCategory()
+    {
+        return hasBeenJustRemoved() // means person was not removed on first weeks
+                // has white bg, is not trial person, and was not added only on the last week
+                || (background.isWhite() && !isOnTrial() && !hasBeenJustAdded());
+    }
+
+    private boolean isOnTrial()
     {
         String lowerCase = personName.toLowerCase();
         return lowerCase.contains("(и.с") || lowerCase.contains("(исп")
@@ -35,28 +41,28 @@ public class PersonCategoryFinder
                 || lowerCase.contains("(випр") || lowerCase.contains("терм");
     }
 
-    private boolean hasBeenJustRemoved(String personName)
+    private boolean hasBeenJustRemoved()
     {
         return group.getRemovedPeople().stream()
                 .filter(value -> StringUtils.equalsIgnoreCase(value, personName))
                 .findFirst().isPresent();
     }
 
-    private boolean hasBeenJustAdded(String personName)
+    private boolean hasBeenJustAdded()
     {
         return group.getAddedPeople().stream()
                 .filter(value -> StringUtils.equalsIgnoreCase(value, personName))
                 .findFirst().isPresent();
     }
 
-    private Category defineNotWhiteCategory(boolean isGreyBackGround, boolean onTrial)
+    private Category defineNotWhiteCategory()
     {
         Category notWhileCategory;
-        if (onTrial)
+        if (isOnTrial())
         {
             notWhileCategory = Category.TRIAL;
         }
-        else if (isGreyBackGround)
+        else if (background.isGrey())
         {
             notWhileCategory = Category.GUEST;
         }
