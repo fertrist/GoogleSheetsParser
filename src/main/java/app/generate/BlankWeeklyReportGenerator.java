@@ -93,7 +93,7 @@ public class BlankWeeklyReportGenerator
     {
         for (Integer column : groupDayColumns)
         {
-            if (column > row.getValues().size()) continue;
+            if (row.getValues() == null || column > row.getValues().size()) continue;
 
             CellData cell = row.getValues().get(column);
 
