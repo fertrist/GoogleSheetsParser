@@ -12,6 +12,7 @@ import javafx.util.Pair;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 public class ReportColumnsExtractor
 {
@@ -32,12 +33,12 @@ public class ReportColumnsExtractor
 
         for (ReportMonth month : coveredMonths) {
 
-            String monthName = month.getMonth().getName();
+            Set<String> translations = month.getMonth().getTranslations();
 
-            if (monthName.equals(getReportStartMonth())) {
+            if (matchesAnyMonthTranslation(getReportStartMonth(), translations)) {
                 startColumn = getColumnForReportStartDay(groupTableData.getDatesRow().getValues(), month.getStart(), month.getEnd());
             }
-            if (monthName.equals(getReportEndMonth())) {
+            if (matchesAnyMonthTranslation(getReportEndMonth(), translations)) {
                 endColumn = getColumnForReportEndDay(groupTableData.getDatesRow().getValues(), month.getStart(), month.getEnd());
             }
         }
@@ -55,6 +56,10 @@ public class ReportColumnsExtractor
                 columnToLetter(startColumn), columnToLetter(endColumn));
 
         return new Pair<>(startColumn, endColumn);
+    }
+
+    private boolean matchesAnyMonthTranslation(String month, Set<String> translations) {
+        return translations.stream().anyMatch(month::equalsIgnoreCase);
     }
 
     private int getColumnForReportStartDay(List<CellData> dateCells, int start, int end) {

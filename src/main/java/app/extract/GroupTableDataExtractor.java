@@ -46,13 +46,9 @@ public class GroupTableDataExtractor
 
     private List<ReportMonth> extractAllMonthsFromMonthsCells(List<GridRange> mergedMonthsCells, List<CellData> separateMonthsCells)
     {
-        List<ReportMonth> months = new ArrayList<>();
-
-        months.addAll(mergedMonthsCells.stream()
+        return mergedMonthsCells.stream()
                 .map(mergedMonthCell -> extractSingleMonthFromItsTableCells(mergedMonthCell, separateMonthsCells))
-                .collect(Collectors.toList()));
-
-        return months;
+                .collect(Collectors.toList());
     }
 
     private ReportMonth extractSingleMonthFromItsTableCells(GridRange gridRange, List<CellData> monthCells)

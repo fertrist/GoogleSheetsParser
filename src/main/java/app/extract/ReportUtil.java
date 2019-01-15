@@ -6,11 +6,13 @@ import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;
 import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.google.api.services.sheets.v4.model.RowData;
+import org.mockito.internal.util.collections.Sets;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ReportUtil {
@@ -22,19 +24,19 @@ public class ReportUtil {
     }
 
     public enum Month {
-        JAN("январь"), FEB("февраль"), MAR("март"),
-        APR("апрель"), MAY("май"), JUN("июнь"),
-        JUL("июль"), AUG("август"), SEP("сентябрь"),
-        OCT("октябрь"), NOV("ноябрь"), DEC("декабрь");
+        JAN("январь", "січень"), FEB("февраль", "лютий"), MAR("март", "березень"),
+        APR("апрель", "квітень"), MAY("май", "травень"), JUN("июнь", "червень"),
+        JUL("июль", "липень"), AUG("август", "серпень"), SEP("сентябрь", "вересень"),
+        OCT("октябрь", "жовтень"), NOV("ноябрь", "листопад"), DEC("декабрь", "грудень");
 
-        private String translation;
+        private Set<String> translations;
 
-        Month(String translation) {
-            this.translation = translation;
+        Month(String... translations) {
+            this.translations = Sets.newSet(translations);
         }
 
-        public String getName() {
-            return translation;
+        public Set<String> getTranslations() {
+            return translations;
         }
     }
 
@@ -112,64 +114,19 @@ public class ReportUtil {
         while (column > 0)
         {
             temp = (column - 1) % 26;
-            letter = Character.toString((char) (temp + 65)) + letter;
+            letter = (char) (temp + 65) + letter;
             column = (column - temp - 1) / 26;
         }
         return letter;
     }
 
-    public static int getMonthNumber(String month) {
-        int number = 0;
-        switch (month.toLowerCase()) {
-            case "январь":
-                number = 1;
-                break;
-            case "февраль":
-                number = 2;
-                break;
-            case "март":
-                number = 3;
-                break;
-            case "апрель":
-                number = 4;
-                break;
-            case "май":
-                number = 5;
-                break;
-            case "июнь":
-                number = 6;
-                break;
-            case "июль":
-                number = 7;
-                break;
-            case "август":
-                number = 8;
-                break;
-            case "сентябрь":
-                number = 9;
-                break;
-            case "октябрь":
-                number = 10;
-                break;
-            case "ноябрь":
-                number = 11;
-                break;
-            case "декабрь":
-                number = 12;
-                break;
-        }
-        return number;
-    }
-
-    public static String getMonthNameFromString(String rawString) {
-        rawString = rawString.toLowerCase();
-        String month = "";
-        for (Month m : Month.values()) {
-            if (rawString.contains(m.getName())) {
-                month = m.getName();
+    private static boolean anyTranslationMatchesString(Set<String> monthTranslations, String str) {
+        for (String translation : monthTranslations) {
+            if (translation.toLowerCase().contains(str.toLowerCase())) {
+                return true;
             }
         }
-        return month;
+        return false;
     }
 
     public static Month constructMonthFromName(String s) {
@@ -177,7 +134,7 @@ public class ReportUtil {
         s = s.toLowerCase();
 
         for (Month m : Month.values()) {
-            if (s.contains(m.getName())) {
+            if (anyTranslationMatchesString(m.getTranslations(), s)) {
                 return m;
             }
         }

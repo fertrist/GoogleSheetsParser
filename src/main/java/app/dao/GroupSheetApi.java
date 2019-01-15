@@ -56,6 +56,7 @@ public class GroupSheetApi
         groupTableData.setDatesRow(getDatesRow());
         groupTableData.setMerges(getMonthMerges());
         groupTableData.setMonthsRow(getMonthsRow());
+
         groupTableData.initColumnToDateMapper();
         groupTableData.initReportLimit();
         groupTableData.setData(getDataRows(groupTableData.getReportRange()));
