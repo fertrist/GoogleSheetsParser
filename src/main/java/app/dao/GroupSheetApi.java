@@ -19,7 +19,7 @@ import java.util.List;
 
 public class GroupSheetApi
 {
-    private static CustomSheetApi sheetApi;
+    private static SheetApi sheetApi;
 
     private Group group;
 
@@ -136,7 +136,7 @@ public class GroupSheetApi
         return getGroupSheet().getData().get(0).getRowData();
     }
 
-    public static void setSheetApi(CustomSheetApi sheetApi)
+    public static void setSheetApi(SheetApi sheetApi)
     {
         GroupSheetApi.sheetApi = sheetApi;
     }

@@ -1,7 +1,7 @@
 package app;
 
 import app.conf.SheetsApp;
-import app.dao.CustomSheetApi;
+import app.dao.SheetApi;
 import app.dao.GroupSheetApi;
 import app.extract.ReportPrinter;
 import app.generate.ReportGenerator;
@@ -20,7 +20,7 @@ public class Application {
     public static void main(String[] args) throws IOException
     {
         Sheets sheetsService = SheetsApp.getSheetsService();
-        CustomSheetApi sheetApi = new CustomSheetApi(sheetsService);
+        SheetApi sheetApi = new SheetApi(sheetsService);
         GroupSheetApi.setSheetApi(sheetApi);
 
         ReportGenerator reportGenerator = new ReportGenerator();
