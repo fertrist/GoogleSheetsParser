@@ -6,9 +6,9 @@ import com.google.api.services.sheets.v4.model.CellFormat;
 import com.google.api.services.sheets.v4.model.Color;
 import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.google.api.services.sheets.v4.model.RowData;
-import org.mockito.internal.util.collections.Sets;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -32,7 +32,7 @@ public class ReportUtil {
         private Set<String> translations;
 
         Month(String... translations) {
-            this.translations = Sets.newSet(translations);
+            this.translations = Arrays.stream(translations).collect(Collectors.toSet());
         }
 
         public Set<String> getTranslations() {

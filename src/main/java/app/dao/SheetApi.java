@@ -12,21 +12,25 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.Sheet;
 import com.google.api.services.sheets.v4.model.Spreadsheet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SheetApi
 {
-
    private Sheets service;
 
+   @Autowired
    public SheetApi(Sheets service)
    {
       this.service = service;
    }
 
-   Sheet getSheet(String spreadsheetId, int startRow, int endRow) throws IOException
+   public Sheet getSheet(String spreadsheetId, int startRow, int endRow) throws IOException
    {
       String monthsRange = startRow + ":" + endRow;
-
+      System.out.println("spreadsheetId: " + spreadsheetId);
+      System.out.println("monthRange:" + monthsRange);
       Spreadsheet spreadsheet = service.spreadsheets()
             .get(spreadsheetId)
             .setRanges(Collections.singletonList(monthsRange))
@@ -37,7 +41,7 @@ public class SheetApi
             .get(0);
    }
 
-   List<RowData> getRowsData(String spreadsheetId, String rangeExpression) throws IOException
+   public List<RowData> getRowsData(String spreadsheetId, String rangeExpression) throws IOException
    {
       System.out.println("Fetching data : " + rangeExpression);
 
@@ -66,7 +70,7 @@ public class SheetApi
       return column + row;
    }
 
-   List<RowData> getRowsData(String spreadsheetId, ReportRange reportRange) throws IOException
+   public List<RowData> getRowsData(String spreadsheetId, ReportRange reportRange) throws IOException
    {
       String start = columnToLetter(reportRange.getStart()
             .getColumn()) + reportRange.getStart()
